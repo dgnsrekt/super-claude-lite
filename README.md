@@ -57,4 +57,10 @@ When using `--add-mcp`, includes these recommended servers:
 - serena
 - playwright
 
+## Acknowledgments
+
+This tool installs the [SuperClaude Framework](https://github.com/SuperClaude-Org/SuperClaude_Framework) created by [SuperClaude-Org](https://github.com/SuperClaude-Org). SuperClaude Framework is an open-source AI configuration framework that provides specialized commands, cognitive personas, and development methodologies for enhancing Claude Code workflows.
+
+Special thanks to the SuperClaude-Org team for creating and maintaining this powerful framework that makes AI-assisted development more accessible and efficient.
+
 ---
