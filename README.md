@@ -1,12 +1,12 @@
 # Super Claude Lite
 
 ```
-  _____ _    _ _____  ______ _____   _____ _               _      _      _ _       
- / ____| |  | |  __ \|  ____|  __ \ / ____| |        /\   | |    | |    (_) |      
-| (___ | |  | | |__) | |__  | |__) | |    | |       /  \  | |    | |     _| |_ ___ 
- \___ \| |  | |  ___/|  __| |  _  /| |    | |      / /\ \ | |    | |    | | __/ _ \
- ____) | |__| | |    | |____| | \ \| |____| |____ / ____ \| |____| |____| | ||  __/
-|_____/ \____/|_|    |______|_|  \_\\_____|______/_/    \_\______|______|_|\__\___|
+ _____ _    _ _____  ______ _____     _____ _               _      _      _ _       
+/ ____| |  | |  __ \|  ____|  __ \   / ____| |        /\   | |    | |    (_) |      
+| (___ | |  | | |__) | |__  | |__) | | |    | |       /  \  | |    | |     _| |_ ___ 
+ \___ \| |  | |  ___/|  __| |  _  /  | |    | |      / /\ \ | |    | |    | | __/ _ \
+ ____) | |__| | |    | |____| | \ \  | |____| |____ / ____ \| |____| |____| | ||  __/
+|_____/ \____/|_|    |______|_|  \_\  \_____|______/_/    \_\______|______|_|\__\___|
 ```
 
 A lightweight installer for the SuperClaude Framework that gives you control over where and how it's installed.
@@ -53,4 +53,4 @@ When using `--add-mcp`, includes these recommended servers:
 
 ---
 
-*Remember: Home directory installations are optional. This tool makes your SuperClaude setup speak for itself.*
+*Finally, a SuperClaude installer that respects your project structure.*
