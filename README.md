@@ -14,7 +14,7 @@
 
 ```
 
-A lightweight installer for the [SuperClaude Framework](https://github.com/SuperClaude-Org/SuperClaude_Framework) that allows you to install it inside the project vs in your home dir.
+A lightweight installer for the [SuperClaude Framework](https://github.com/SuperClaude-Org/SuperClaude_Framework) that allows you to install it inside the project dir vs home dir.
 
 ## Demo
 

@@ -22,7 +22,7 @@ func main() {
 	rootCmd := &cobra.Command{
 		Use:     "super-claude-lite",
 		Short:   "Lightweight installer for SuperClaude Framework",
-		Long:    "A lightweight CLI tool to install SuperClaude Framework locally without forcing home directory installation.",
+		Long:    "A lightweight installer for the SuperClaude Framework that allows you to install it inside the project dir vs home dir.",
 		Version: fmt.Sprintf("%s (%s)", version, commit),
 	}
 
