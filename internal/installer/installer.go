@@ -3,13 +3,10 @@ package installer
 import (
 	"fmt"
 	"log"
-
-	"github.com/heimdalr/dag"
 )
 
-// Installer manages the SuperClaude installation process using a DAG
+// Installer manages the SuperClaude installation process
 type Installer struct {
-	dag     *dag.DAG
 	steps   map[string]*InstallStep
 	context *InstallContext
 }
@@ -26,20 +23,7 @@ func NewInstaller(targetDir string, config *InstallConfig) (*Installer, error) {
 		context: context,
 	}
 
-	if err := installer.buildDAG(); err != nil {
-		return nil, fmt.Errorf("failed to build DAG: %w", err)
-	}
-
 	return installer, nil
-}
-
-// buildDAG constructs the dependency graph for installation steps
-func (i *Installer) buildDAG() error {
-	// Since we're doing manual dependency resolution, we don't need to build the actual DAG
-	// Just create an empty DAG for now
-	d := dag.NewDAG()
-	i.dag = d
-	return nil
 }
 
 // Install executes the installation process
@@ -63,11 +47,10 @@ func (i *Installer) Install() error {
 			// Check if all dependencies are satisfied
 			canExecute := true
 			dependencies := i.getDependencies(stepName)
-			var missingDeps []string
 			for _, dep := range dependencies {
 				if !executed[dep] {
 					canExecute = false
-					missingDeps = append(missingDeps, dep)
+					break
 				}
 			}
 
@@ -139,15 +122,6 @@ func (i *Installer) getDependencies(stepName string) []string {
 	return []string{}
 }
 
-// getStepNames returns a slice of all step names
-func getStepNames(steps map[string]*InstallStep) []string {
-	names := make([]string, 0, len(steps))
-	for name := range steps {
-		names = append(names, name)
-	}
-	return names
-}
-
 // GetInstallationSummary returns a summary of the installation
 func (i *Installer) GetInstallationSummary() InstallationSummary {
 	summary := InstallationSummary{
@@ -170,12 +144,12 @@ func (i *Installer) GetInstallationSummary() InstallationSummary {
 
 // InstallationSummary provides information about what was installed
 type InstallationSummary struct {
-	TargetDir         string
-	BackupDir         string
-	CompletedSteps    []string
-	BackedUpFiles     []string
-	ExistingFiles     ExistingFiles
-	MCPConfigCreated  bool
+	TargetDir        string
+	BackupDir        string
+	CompletedSteps   []string
+	BackedUpFiles    []string
+	ExistingFiles    ExistingFiles
+	MCPConfigCreated bool
 }
 
 // PrintSummary displays a human-readable installation summary

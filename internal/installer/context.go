@@ -2,6 +2,7 @@ package installer
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"time"
@@ -96,7 +97,7 @@ func (bm *BackupManager) CreateBackupDir() error {
 	if bm.BackupDir == "" {
 		return nil
 	}
-	return os.MkdirAll(bm.BackupDir, 0755)
+	return os.MkdirAll(bm.BackupDir, 0o750)
 }
 
 // BackupFile creates a backup of the specified file
@@ -144,13 +145,21 @@ func copyFile(src, dst string) error {
 	if err != nil {
 		return err
 	}
-	defer sourceFile.Close()
+	defer func() {
+		if err := sourceFile.Close(); err != nil {
+			log.Printf("failed to close source file %s: %v", src, err)
+		}
+	}()
 
 	destFile, err := os.Create(dst)
 	if err != nil {
 		return err
 	}
-	defer destFile.Close()
+	defer func() {
+		if err := destFile.Close(); err != nil {
+			log.Printf("failed to close destination file %s: %v", dst, err)
+		}
+	}()
 
 	_, err = destFile.ReadFrom(sourceFile)
 	return err

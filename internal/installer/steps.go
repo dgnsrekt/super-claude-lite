@@ -3,6 +3,7 @@ package installer
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -78,7 +79,7 @@ func createBackups(ctx *InstallContext) error {
 
 func checkTargetDirectory(ctx *InstallContext) error {
 	// Ensure target directory exists
-	if err := os.MkdirAll(ctx.TargetDir, 0755); err != nil {
+	if err := os.MkdirAll(ctx.TargetDir, 0o750); err != nil {
 		return fmt.Errorf("failed to create target directory: %w", err)
 	}
 
@@ -111,9 +112,8 @@ func createDirectoryStructure(ctx *InstallContext) error {
 	// Create .claude directory only if it doesn't exist or is empty
 	claudeDir := filepath.Join(ctx.TargetDir, config.ClaudeDir)
 	if !ctx.SkipClaudeDir && !ctx.ExistingFiles.ClaudeDir {
-		dirs = append(dirs, claudeDir)
 		// Also create commands directory for Claude Code integration
-		dirs = append(dirs, filepath.Join(claudeDir, "commands"))
+		dirs = append(dirs, claudeDir, filepath.Join(claudeDir, "commands"))
 	}
 
 	for _, dir := range dirs {
@@ -122,7 +122,7 @@ func createDirectoryStructure(ctx *InstallContext) error {
 			continue
 		}
 
-		if err := os.MkdirAll(dir, 0755); err != nil {
+		if err := os.MkdirAll(dir, 0o750); err != nil {
 			return fmt.Errorf("failed to create directory %s: %w", dir, err)
 		}
 	}
@@ -202,22 +202,22 @@ func createCommandSymlink(ctx *InstallContext) error {
 		fmt.Printf("[DRY RUN] Would create symlink from .superclaude/Commands to .claude/commands/sc\n")
 		return nil
 	}
-	
+
 	targetPath := filepath.Join(ctx.TargetDir, config.ClaudeDir, "commands", "sc")
-	
+
 	// Remove existing symlink if it exists
 	if _, err := os.Lstat(targetPath); err == nil {
 		if err := os.Remove(targetPath); err != nil {
 			return fmt.Errorf("failed to remove existing symlink: %w", err)
 		}
 	}
-	
+
 	// Create symlink using relative path for portability
 	relPath := "../../.superclaude/Commands"
 	if err := os.Symlink(relPath, targetPath); err != nil {
 		return fmt.Errorf("failed to create command symlink: %w", err)
 	}
-	
+
 	return nil
 }
 
@@ -339,7 +339,9 @@ func checkWritePermissions(dir string) error {
 	if err != nil {
 		return err
 	}
-	file.Close()
+	if err := file.Close(); err != nil {
+		log.Printf("failed to close test file: %v", err)
+	}
 	return os.Remove(testFile)
 }
 
@@ -362,7 +364,7 @@ func copyMarkdownFiles(srcDir, dstDir string) error {
 		dstPath := filepath.Join(dstDir, relPath)
 
 		// Ensure destination directory exists
-		if err := os.MkdirAll(filepath.Dir(dstPath), 0755); err != nil {
+		if err := os.MkdirAll(filepath.Dir(dstPath), 0o750); err != nil {
 			return err
 		}
 
@@ -386,7 +388,7 @@ func mergeCLAUDEmd(claudePath string) error {
 	// Append SuperClaude section
 	newContent := contentStr + "\n\n" + config.SuperClaudeImport + "\n"
 
-	return os.WriteFile(claudePath, []byte(newContent), 0644)
+	return os.WriteFile(claudePath, []byte(newContent), 0o600)
 }
 
 func createCLAUDEmd(claudePath string) error {
@@ -394,7 +396,7 @@ func createCLAUDEmd(claudePath string) error {
 
 ` + config.SuperClaudeImport + "\n"
 
-	return os.WriteFile(claudePath, []byte(content), 0644)
+	return os.WriteFile(claudePath, []byte(content), 0o600)
 }
 
 func mergeMCPConfig(mcpPath string, addRecommended bool) error {
@@ -430,20 +432,7 @@ func mergeMCPConfig(mcpPath string, addRecommended bool) error {
 		return fmt.Errorf("failed to marshal .mcp.json: %w", err)
 	}
 
-	return os.WriteFile(mcpPath, output, 0644)
-}
-
-func createMCPConfig(mcpPath string) error {
-	config := map[string]interface{}{
-		"mcpServers": make(map[string]interface{}),
-	}
-
-	output, err := json.MarshalIndent(config, "", "    ")
-	if err != nil {
-		return fmt.Errorf("failed to marshal .mcp.json: %w", err)
-	}
-
-	return os.WriteFile(mcpPath, output, 0644)
+	return os.WriteFile(mcpPath, output, 0o600)
 }
 
 func createMCPConfigWithRecommended(mcpPath string) error {
@@ -456,5 +445,5 @@ func createMCPConfigWithRecommended(mcpPath string) error {
 		return fmt.Errorf("failed to marshal .mcp.json: %w", err)
 	}
 
-	return os.WriteFile(mcpPath, output, 0644)
+	return os.WriteFile(mcpPath, output, 0o600)
 }

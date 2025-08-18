@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	version = "0.1.0"
+	version = "0.2.0"
 	commit  = "dev"
 )
 
@@ -213,7 +213,7 @@ func createRollbackCommand() *cobra.Command {
 	}
 
 	cmd.Flags().StringVarP(&backupDir, "backup-dir", "b", "", "Backup directory to restore from (required)")
-	cmd.MarkFlagRequired("backup-dir")
+	_ = cmd.MarkFlagRequired("backup-dir")
 
 	return cmd
 }
@@ -274,7 +274,7 @@ func cleanInstallation(targetDir string, force bool) error {
 		fmt.Printf("\nContinue? (y/N): ")
 
 		var response string
-		fmt.Scanln(&response)
+		_, _ = fmt.Scanln(&response)
 		if response != "y" && response != "Y" {
 			fmt.Printf("Cancelled.\n")
 			return nil
