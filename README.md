@@ -22,14 +22,15 @@ A lightweight installer for the SuperClaude Framework that allows you to install
 # Install the tool
 go install github.com/dgnsrekt/super-claude-lite/cmd/super-claude-lite@latest
 
-# Basic installation
-super-claude-lite init
+# Check installation status
+super-claude-lite status
 
 # Install with recommended MCP servers
 super-claude-lite init --add-mcp
 
-# Check installation status
-super-claude-lite status
+# or Basic installation
+super-claude-lite init
+
 ```
 
 ## Commands
