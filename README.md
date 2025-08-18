@@ -50,7 +50,7 @@ super-claude-lite init
 - Optional MCP server configuration with `--add-mcp` flag
 - Automatic backup and merge of existing files
 - Symlink integration with Claude Code slash commands
-- DAG-based dependency resolution
+- Dependency-aware installation steps
 - Dry-run support
 
 ## MCP Servers
