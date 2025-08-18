@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"super-claude-lite/internal/config"
-	"super-claude-lite/internal/git"
+	"github.com/dgnsrekt/super-claude-lite/internal/config"
+	"github.com/dgnsrekt/super-claude-lite/internal/git"
 )
 
 // InstallStep represents a single step in the installation process

@@ -10,7 +10,7 @@ import (
 	"github.com/charmbracelet/fang"
 	"github.com/spf13/cobra"
 
-	"super-claude-lite/internal/installer"
+	"github.com/dgnsrekt/super-claude-lite/internal/installer"
 )
 
 var (

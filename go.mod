@@ -1,4 +1,4 @@
-module super-claude-lite
+module github.com/dgnsrekt/super-claude-lite
 
 go 1.24.0
 

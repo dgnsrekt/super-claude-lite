@@ -6,7 +6,7 @@ import (
 	"os/exec"
 	"path/filepath"
 
-	"super-claude-lite/internal/config"
+	"github.com/dgnsrekt/super-claude-lite/internal/config"
 )
 
 // CloneRepository clones the SuperClaude repository to a temporary directory at the fixed commit
