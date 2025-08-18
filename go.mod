@@ -5,7 +5,7 @@ go 1.24.0
 toolchain go1.24.5
 
 require (
-	github.com/charmbracelet/fang v0.0.0-20241207195028-2a5f3c7c1b98
+	github.com/charmbracelet/fang v0.3.1-0.20250818140613-d27cfc4cc5f4
 	github.com/heimdalr/dag v1.2.1
 	github.com/spf13/cobra v1.9.1
 )
@@ -33,5 +33,3 @@ require (
 	golang.org/x/sys v0.33.0 // indirect
 	golang.org/x/text v0.24.0 // indirect
 )
-
-replace github.com/charmbracelet/fang => github.com/charmbracelet/fang v0.3.1-0.20250818140613-d27cfc4cc5f4
