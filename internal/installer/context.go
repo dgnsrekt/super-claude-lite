@@ -183,6 +183,15 @@ func copyDir(src, dst string) error {
 			return os.MkdirAll(destPath, info.Mode())
 		}
 
+		// Handle symbolic links
+		if info.Mode()&os.ModeSymlink != 0 {
+			target, err := os.Readlink(path)
+			if err != nil {
+				return fmt.Errorf("failed to read symlink %s: %w", path, err)
+			}
+			return os.Symlink(target, destPath)
+		}
+
 		return copyFile(path, destPath)
 	})
 }

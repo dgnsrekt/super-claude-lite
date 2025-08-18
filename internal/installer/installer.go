@@ -104,7 +104,6 @@ func (i *Installer) getDependencies(stepName string) []string {
 		"MergeOrCreateCLAUDEmd":    {"CreateDirectoryStructure"},
 		"MergeOrCreateMCPConfig":   {"CreateDirectoryStructure"},
 		"CreateCommandSymlink":     {"CopyCommandFiles", "CreateDirectoryStructure"},
-		"CleanupTempFiles":         {"ValidateInstallation"},
 	}
 
 	// ValidateInstallation dependencies change based on whether MCP config is enabled
@@ -114,6 +113,15 @@ func (i *Installer) getDependencies(stepName string) []string {
 			validateDeps = append(validateDeps, "MergeOrCreateMCPConfig")
 		}
 		return validateDeps
+	}
+
+	// CleanupTempFiles runs after everything else including validation
+	if stepName == "CleanupTempFiles" {
+		cleanupDeps := []string{"CopyCoreFiles", "CopyCommandFiles", "MergeOrCreateCLAUDEmd", "CreateCommandSymlink", "ValidateInstallation"}
+		if i.context.Config.AddRecommendedMCP {
+			cleanupDeps = append(cleanupDeps, "MergeOrCreateMCPConfig")
+		}
+		return cleanupDeps
 	}
 
 	if deps, ok := dependencies[stepName]; ok {
