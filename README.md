@@ -63,4 +63,8 @@ This tool installs the [SuperClaude Framework](https://github.com/SuperClaude-Or
 
 Special thanks to the SuperClaude-Org team for creating and maintaining this powerful framework that makes AI-assisted development more accessible and efficient.
 
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
 ---
