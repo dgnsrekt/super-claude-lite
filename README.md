@@ -1,15 +1,20 @@
 # Super Claude Lite
 
 ```
- _____ _    _ _____  ______ _____     _____ _               _      _      _ _       
-/ ____| |  | |  __ \|  ____|  __ \   / ____| |        /\   | |    | |    (_) |      
-| (___ | |  | | |__) | |__  | |__) | | |    | |       /  \  | |    | |     _| |_ ___ 
- \___ \| |  | |  ___/|  __| |  _  /  | |    | |      / /\ \ | |    | |    | | __/ _ \
- ____) | |__| | |    | |____| | \ \  | |____| |____ / ____ \| |____| |____| | ||  __/
-|_____/ \____/|_|    |______|_|  \_\  \_____|______/_/    \_\______|______|_|\__\___|
+   _____                          ________                __
+  / ___/__  ______  ___  _____   / ____/ /___ ___  ______/ /__
+  \__ \/ / / / __ \/ _ \/ ___/  / /   / / __ `/ / / / __  / _ \
+ ___/ / /_/ / /_/ /  __/ /     / /___/ / /_/ / /_/ / /_/ /  __/
+/____/\__,_/ .___/\___/_/      \____/_/\__,_/\__,_/\__,_/\___/
+    __    /_/_
+   / /   (_) /____
+  / /   / / __/ _ \
+ / /___/ / /_/  __/
+/_____/_/\__/\___/
+
 ```
 
-A lightweight installer for the SuperClaude Framework that gives you control over where and how it's installed.
+A lightweight installer for the SuperClaude Framework that allows you to install it inside the project vs in your home dir.
 
 ## Quick Start
 
@@ -46,11 +51,10 @@ super-claude-lite status
 ## MCP Servers
 
 When using `--add-mcp`, includes these recommended servers:
+
 - sequential-thinking
 - context7
 - serena
 - playwright
 
 ---
-
-*Finally, a SuperClaude installer that respects your project structure.*
