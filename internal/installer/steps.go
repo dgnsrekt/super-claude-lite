@@ -355,7 +355,11 @@ func copyMarkdownFiles(srcDir, dstDir string) error {
 			return nil
 		}
 
-		// Copy all files (not just .md files)
+		// Only copy markdown files
+		if !strings.HasSuffix(strings.ToLower(info.Name()), ".md") {
+			return nil // Skip non-markdown files
+		}
+
 		relPath, err := filepath.Rel(srcDir, path)
 		if err != nil {
 			return err
