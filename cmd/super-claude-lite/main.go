@@ -213,7 +213,9 @@ func createRollbackCommand() *cobra.Command {
 	}
 
 	cmd.Flags().StringVarP(&backupDir, "backup-dir", "b", "", "Backup directory to restore from (required)")
-	_ = cmd.MarkFlagRequired("backup-dir")
+	if err := cmd.MarkFlagRequired("backup-dir"); err != nil {
+		panic(fmt.Sprintf("failed to mark backup-dir as required: %v", err))
+	}
 
 	return cmd
 }
@@ -274,7 +276,10 @@ func cleanInstallation(targetDir string, force bool) error {
 		fmt.Printf("\nContinue? (y/N): ")
 
 		var response string
-		_, _ = fmt.Scanln(&response)
+		if _, err := fmt.Scanln(&response); err != nil {
+			fmt.Printf("Input error, cancelling operation.\n")
+			return nil
+		}
 		if response != "y" && response != "Y" {
 			fmt.Printf("Cancelled.\n")
 			return nil
