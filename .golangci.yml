@@ -1,0 +1,70 @@
+version: "2"
+
+run:
+  timeout: 5m
+  modules-download-mode: readonly
+
+linters:
+  default: standard
+  enable:
+    - goconst         # Find repeated strings that could be constants
+    - gocritic        # Comprehensive meta-linter
+    - gocyclo         # Cyclomatic complexity
+    - gosec           # Security analysis
+    - misspell        # Spelling mistakes
+    - unparam         # Unused function parameters
+    - unconvert       # Unnecessary type conversions
+    - whitespace      # Whitespace issues
+    - prealloc        # Slice preallocation
+    - predeclared     # Misuse of predeclared identifiers
+  exclusions:
+    rules:
+      # Exclude specific linters for test files
+      - path: _test\.go
+        linters:
+          - gosec
+          - goconst
+          - gocyclo
+
+      # Exclude G304 (file path from variable) for our file operations
+      - path: internal/installer/
+        text: "G304:"
+        linters:
+          - gosec
+  settings:
+    gocyclo:
+      min-complexity: 15
+
+    goconst:
+      min-len: 3
+      min-occurrences: 3
+
+    gosec:
+      excludes:
+        - G204  # Subprocess launched with variable (we need this for git commands)
+
+    gocritic:
+      enabled-tags:
+        - diagnostic
+        - performance
+        - style
+      disabled-checks:
+        - ifElseChain
+        - singleCaseSwitch
+
+formatters:
+  enable:
+    - gofmt           # Format code
+    - goimports       # Manage imports
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
+
+output:
+  formats:
+    text:
+      path: stdout
+      print-linter-name: true
+      print-issued-lines: true
+      colors: true
