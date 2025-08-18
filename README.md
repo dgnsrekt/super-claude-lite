@@ -16,6 +16,10 @@
 
 A lightweight installer for the SuperClaude Framework that allows you to install it inside the project vs in your home dir.
 
+## Demo
+
+![Demo](demo.gif)
+
 ## Quick Start
 
 ```bash
