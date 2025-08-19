@@ -10,13 +10,13 @@ import (
 
 // BenchmarkResult holds performance measurement results
 type BenchmarkResult struct {
-	Name               string
-	Duration           time.Duration
-	MemoryAllocations  int64
-	MemoryBytes        int64
-	OperationsPerSec   float64
-	StepsExecuted      int
-	Error              error
+	Name              string
+	Duration          time.Duration
+	MemoryAllocations int64
+	MemoryBytes       int64
+	OperationsPerSec  float64
+	StepsExecuted     int
+	Error             error
 }
 
 // ManualTraversalInstaller simulates the pre-DAG manual dependency resolution approach
@@ -89,7 +89,7 @@ func (m *ManualTraversalInstaller) InstallWithManualTraversal() error {
 // BenchmarkDAGInstallation benchmarks the current DAG-based installation
 func BenchmarkDAGInstallation(b *testing.B) {
 	for _, scenario := range []struct {
-		name string
+		name   string
 		config *InstallConfig
 	}{
 		{"Default_Config", &InstallConfig{NoBackup: true, Interactive: false}},
@@ -101,9 +101,9 @@ func BenchmarkDAGInstallation(b *testing.B) {
 			for i := 0; i < b.N; i++ {
 				// Create fresh temp directory for each iteration
 				tempDir := b.TempDir()
-				
+
 				b.ResetTimer()
-				
+
 				installer, err := NewInstaller(tempDir, scenario.config)
 				if err != nil {
 					b.Fatalf("Failed to create installer: %v", err)
@@ -124,7 +124,7 @@ func BenchmarkDAGInstallation(b *testing.B) {
 // BenchmarkManualTraversalSimulation benchmarks simulated manual traversal
 func BenchmarkManualTraversalSimulation(b *testing.B) {
 	for _, scenario := range []struct {
-		name string
+		name   string
 		config *InstallConfig
 	}{
 		{"Default_Config", &InstallConfig{NoBackup: true, Interactive: false}},
@@ -136,9 +136,9 @@ func BenchmarkManualTraversalSimulation(b *testing.B) {
 			for i := 0; i < b.N; i++ {
 				// Create fresh temp directory for each iteration
 				tempDir := b.TempDir()
-				
+
 				b.ResetTimer()
-				
+
 				manualInstaller, err := NewManualTraversalInstaller(tempDir, scenario.config)
 				if err != nil {
 					b.Fatalf("Failed to create manual installer: %v", err)
@@ -166,13 +166,13 @@ func BenchmarkBaselineGraphConstruction(b *testing.B) {
 		b.Run(fmt.Sprintf("Config_%d", i), func(b *testing.B) {
 			for j := 0; j < b.N; j++ {
 				b.ResetTimer()
-				
+
 				graph := NewDependencyGraph()
 				err := graph.BuildInstallationGraph(config)
 				if err != nil {
 					b.Fatalf("Failed to build graph: %v", err)
 				}
-				
+
 				b.StopTimer()
 			}
 		})
@@ -201,12 +201,12 @@ func BenchmarkBaselineTopologicalSort(b *testing.B) {
 		b.Run(fmt.Sprintf("Graph_%d", i), func(b *testing.B) {
 			for j := 0; j < b.N; j++ {
 				b.ResetTimer()
-				
+
 				_, err := graph.GetTopologicalOrder()
 				if err != nil {
 					b.Fatalf("Failed to get topological order: %v", err)
 				}
-				
+
 				b.StopTimer()
 			}
 		})
@@ -219,9 +219,9 @@ func BenchmarkBaselineCompleteWorkflow(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			tempDir := b.TempDir()
 			config := &InstallConfig{NoBackup: true, Interactive: false}
-			
+
 			b.ResetTimer()
-			
+
 			// Complete DAG workflow: construct graph + get order
 			installer, err := NewInstaller(tempDir, config)
 			if err != nil {
@@ -237,7 +237,7 @@ func BenchmarkBaselineCompleteWorkflow(b *testing.B) {
 			if len(order) < 10 {
 				b.Fatalf("Expected at least 10 steps, got %d", len(order))
 			}
-			
+
 			b.StopTimer()
 		}
 	})
@@ -246,9 +246,9 @@ func BenchmarkBaselineCompleteWorkflow(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			tempDir := b.TempDir()
 			config := &InstallConfig{NoBackup: true, Interactive: false}
-			
+
 			b.ResetTimer()
-			
+
 			// Simulate manual workflow: just create context + determine order manually
 			_, err := NewInstallContext(tempDir, config)
 			if err != nil {
@@ -262,11 +262,11 @@ func BenchmarkBaselineCompleteWorkflow(b *testing.B) {
 				"CopyCoreFiles", "CopyCommandFiles", "MergeOrCreateCLAUDEmd",
 				"CreateCommandSymlink", "ValidateInstallation", "CleanupTempFiles",
 			}
-			
+
 			if len(manualOrder) < 10 {
 				b.Fatalf("Expected at least 10 steps in manual order")
 			}
-			
+
 			b.StopTimer()
 		}
 	})
@@ -288,7 +288,7 @@ func TestBaselinePerformanceMeasurements(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Failed to create installer: %v", err)
 		}
-		
+
 		order, err := installer.graph.GetTopologicalOrder()
 		if err != nil {
 			t.Fatalf("Failed to get topological order: %v", err)
@@ -327,13 +327,13 @@ func TestBaselinePerformanceMeasurements(t *testing.T) {
 func BenchmarkMemoryAllocation(b *testing.B) {
 	b.Run("DAG_Memory_Usage", func(b *testing.B) {
 		config := &InstallConfig{NoBackup: true, Interactive: false, AddRecommendedMCP: true}
-		
+
 		b.ReportAllocs()
 		b.ResetTimer()
-		
+
 		for i := 0; i < b.N; i++ {
 			tempDir := b.TempDir()
-			
+
 			installer, err := NewInstaller(tempDir, config)
 			if err != nil {
 				b.Fatalf("Failed to create installer: %v", err)
@@ -393,7 +393,7 @@ func TestBaselinePerformanceRegression(t *testing.T) {
 	}
 
 	avgDuration := totalDuration / time.Duration(iterations)
-	
+
 	t.Logf("Performance Regression Test Results:")
 	t.Logf("  Average Duration: %v", avgDuration)
 	t.Logf("  Total Iterations: %d", iterations)

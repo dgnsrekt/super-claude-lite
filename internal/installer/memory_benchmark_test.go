@@ -22,19 +22,19 @@ func measureMemoryUsage(fn func() error) (*MemoryMetrics, error) {
 	// Force GC and get initial memory stats
 	runtime.GC()
 	runtime.GC() // Call twice to ensure clean state
-	
+
 	var memBefore runtime.MemStats
 	runtime.ReadMemStats(&memBefore)
-	
+
 	// Measure execution time
 	start := time.Now()
 	err := fn()
 	executionTime := time.Since(start)
-	
+
 	// Get final memory stats
 	var memAfter runtime.MemStats
 	runtime.ReadMemStats(&memAfter)
-	
+
 	metrics := &MemoryMetrics{
 		AllocBytes:      memAfter.Alloc - memBefore.Alloc,
 		TotalAllocBytes: memAfter.TotalAlloc - memBefore.TotalAlloc,
@@ -43,7 +43,7 @@ func measureMemoryUsage(fn func() error) (*MemoryMetrics, error) {
 		PauseTotalNs:    memAfter.PauseTotalNs - memBefore.PauseTotalNs,
 		ExecutionTime:   executionTime,
 	}
-	
+
 	return metrics, err
 }
 
@@ -207,7 +207,7 @@ func BenchmarkMemoryUsage(b *testing.B) {
 	b.Run("GraphConstruction_MemAllocs", func(b *testing.B) {
 		config := &InstallConfig{AddRecommendedMCP: true}
 		b.ResetTimer()
-		
+
 		for i := 0; i < b.N; i++ {
 			dg := NewDependencyGraph()
 			err := dg.BuildInstallationGraph(config)
@@ -222,9 +222,9 @@ func BenchmarkMemoryUsage(b *testing.B) {
 		dg := NewDependencyGraph()
 		config := &InstallConfig{AddRecommendedMCP: true}
 		_ = dg.BuildInstallationGraph(config)
-		
+
 		b.ResetTimer()
-		
+
 		for i := 0; i < b.N; i++ {
 			_, err := dg.GetTopologicalOrder()
 			if err != nil {
@@ -257,7 +257,7 @@ func TestPerformanceRegression(t *testing.T) {
 
 	t.Run("GraphConstruction_Regression", func(t *testing.T) {
 		baseline := baselines["GraphConstruction"]
-		
+
 		// Test multiple iterations to ensure consistency
 		for i := 0; i < 10; i++ {
 			metrics, err := measureMemoryUsage(func() error {
@@ -271,12 +271,12 @@ func TestPerformanceRegression(t *testing.T) {
 			}
 
 			if metrics.ExecutionTime > baseline.maxExecutionTime {
-				t.Errorf("Performance regression in iteration %d: %v > %v", 
+				t.Errorf("Performance regression in iteration %d: %v > %v",
 					i, metrics.ExecutionTime, baseline.maxExecutionTime)
 			}
 
 			if metrics.TotalAllocBytes > baseline.maxMemoryBytes {
-				t.Errorf("Memory regression in iteration %d: %d bytes > %d bytes", 
+				t.Errorf("Memory regression in iteration %d: %d bytes > %d bytes",
 					i, metrics.TotalAllocBytes, baseline.maxMemoryBytes)
 			}
 		}
@@ -284,12 +284,12 @@ func TestPerformanceRegression(t *testing.T) {
 
 	t.Run("TopologicalSort_Regression", func(t *testing.T) {
 		baseline := baselines["TopologicalSort"]
-		
+
 		// Pre-build graph
 		dg := NewDependencyGraph()
 		config := &InstallConfig{AddRecommendedMCP: true}
 		_ = dg.BuildInstallationGraph(config)
-		
+
 		// Test multiple iterations
 		for i := 0; i < 10; i++ {
 			metrics, err := measureMemoryUsage(func() error {
@@ -302,12 +302,12 @@ func TestPerformanceRegression(t *testing.T) {
 			}
 
 			if metrics.ExecutionTime > baseline.maxExecutionTime {
-				t.Errorf("Performance regression in iteration %d: %v > %v", 
+				t.Errorf("Performance regression in iteration %d: %v > %v",
 					i, metrics.ExecutionTime, baseline.maxExecutionTime)
 			}
 
 			if metrics.TotalAllocBytes > baseline.maxMemoryBytes {
-				t.Errorf("Memory regression in iteration %d: %d bytes > %d bytes", 
+				t.Errorf("Memory regression in iteration %d: %d bytes > %d bytes",
 					i, metrics.TotalAllocBytes, baseline.maxMemoryBytes)
 			}
 		}
@@ -315,18 +315,18 @@ func TestPerformanceRegression(t *testing.T) {
 
 	t.Run("CombinedWorkflow_Regression", func(t *testing.T) {
 		baseline := baselines["CombinedWorkflow"]
-		
+
 		// Test multiple iterations of the complete workflow
 		for i := 0; i < 10; i++ {
 			metrics, err := measureMemoryUsage(func() error {
 				dg := NewDependencyGraph()
 				config := &InstallConfig{AddRecommendedMCP: true}
-				
+
 				// Build graph
 				if err := dg.BuildInstallationGraph(config); err != nil {
 					return err
 				}
-				
+
 				// Get topological order
 				_, err := dg.GetTopologicalOrder()
 				return err
@@ -337,12 +337,12 @@ func TestPerformanceRegression(t *testing.T) {
 			}
 
 			if metrics.ExecutionTime > baseline.maxExecutionTime {
-				t.Errorf("Performance regression in iteration %d: %v > %v", 
+				t.Errorf("Performance regression in iteration %d: %v > %v",
 					i, metrics.ExecutionTime, baseline.maxExecutionTime)
 			}
 
 			if metrics.TotalAllocBytes > baseline.maxMemoryBytes {
-				t.Errorf("Memory regression in iteration %d: %d bytes > %d bytes", 
+				t.Errorf("Memory regression in iteration %d: %d bytes > %d bytes",
 					i, metrics.TotalAllocBytes, baseline.maxMemoryBytes)
 			}
 		}
@@ -354,36 +354,36 @@ func TestConcurrentPerformance(t *testing.T) {
 	t.Run("ConcurrentGraphConstruction", func(t *testing.T) {
 		const numGoroutines = 10
 		const iterations = 5
-		
+
 		results := make(chan time.Duration, numGoroutines*iterations)
-		
+
 		config := &InstallConfig{AddRecommendedMCP: true}
-		
+
 		// Start multiple goroutines
 		for g := 0; g < numGoroutines; g++ {
 			go func() {
 				for i := 0; i < iterations; i++ {
 					start := time.Now()
-					
+
 					dg := NewDependencyGraph()
 					err := dg.BuildInstallationGraph(config)
-					
+
 					duration := time.Since(start)
-					
+
 					if err != nil {
 						t.Errorf("Concurrent graph construction failed: %v", err)
 						return
 					}
-					
+
 					results <- duration
 				}
 			}()
 		}
-		
+
 		// Collect results
 		var totalDuration time.Duration
 		var maxDuration time.Duration
-		
+
 		for i := 0; i < numGoroutines*iterations; i++ {
 			duration := <-results
 			totalDuration += duration
@@ -391,21 +391,21 @@ func TestConcurrentPerformance(t *testing.T) {
 				maxDuration = duration
 			}
 		}
-		
+
 		averageDuration := totalDuration / time.Duration(numGoroutines*iterations)
-		
+
 		t.Logf("Concurrent graph construction performance:")
 		t.Logf("  Average time: %v", averageDuration)
 		t.Logf("  Max time: %v", maxDuration)
 		t.Logf("  Goroutines: %d", numGoroutines)
 		t.Logf("  Iterations per goroutine: %d", iterations)
-		
+
 		// Verify performance under concurrent load
 		const maxExpectedTime = 500 * time.Microsecond // Allow more time under load
 		if averageDuration > maxExpectedTime {
 			t.Errorf("Concurrent performance degraded: average %v > %v", averageDuration, maxExpectedTime)
 		}
-		
+
 		if maxDuration > 2*maxExpectedTime {
 			t.Errorf("Concurrent max time too high: %v > %v", maxDuration, 2*maxExpectedTime)
 		}
@@ -416,36 +416,36 @@ func TestConcurrentPerformance(t *testing.T) {
 		dg := NewDependencyGraph()
 		config := &InstallConfig{AddRecommendedMCP: true}
 		_ = dg.BuildInstallationGraph(config)
-		
+
 		const numGoroutines = 10
 		const iterations = 10
-		
+
 		results := make(chan time.Duration, numGoroutines*iterations)
-		
+
 		// Start multiple goroutines
 		for g := 0; g < numGoroutines; g++ {
 			go func() {
 				for i := 0; i < iterations; i++ {
 					start := time.Now()
-					
+
 					_, err := dg.GetTopologicalOrder()
-					
+
 					duration := time.Since(start)
-					
+
 					if err != nil {
 						t.Errorf("Concurrent topological sort failed: %v", err)
 						return
 					}
-					
+
 					results <- duration
 				}
 			}()
 		}
-		
+
 		// Collect results
 		var totalDuration time.Duration
 		var maxDuration time.Duration
-		
+
 		for i := 0; i < numGoroutines*iterations; i++ {
 			duration := <-results
 			totalDuration += duration
@@ -453,21 +453,21 @@ func TestConcurrentPerformance(t *testing.T) {
 				maxDuration = duration
 			}
 		}
-		
+
 		averageDuration := totalDuration / time.Duration(numGoroutines*iterations)
-		
+
 		t.Logf("Concurrent topological sort performance:")
 		t.Logf("  Average time: %v", averageDuration)
 		t.Logf("  Max time: %v", maxDuration)
 		t.Logf("  Goroutines: %d", numGoroutines)
 		t.Logf("  Iterations per goroutine: %d", iterations)
-		
+
 		// Verify performance under concurrent load
 		const maxExpectedTime = 200 * time.Microsecond // Allow some overhead for concurrent access
 		if averageDuration > maxExpectedTime {
 			t.Errorf("Concurrent performance degraded: average %v > %v", averageDuration, maxExpectedTime)
 		}
-		
+
 		if maxDuration > 5*maxExpectedTime {
 			t.Errorf("Concurrent max time too high: %v > %v", maxDuration, 5*maxExpectedTime)
 		}

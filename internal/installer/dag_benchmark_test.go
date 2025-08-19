@@ -53,7 +53,7 @@ func BenchmarkGraphOperations(b *testing.B) {
 			b.StopTimer()
 			dg := NewTestDependencyGraph()
 			b.StartTimer()
-			
+
 			err := dg.AddStep(fmt.Sprintf("Step_%d", i))
 			if err != nil {
 				b.Fatalf("Failed to add step: %v", err)
@@ -72,7 +72,7 @@ func BenchmarkGraphOperations(b *testing.B) {
 
 		for i := 0; i < b.N; i++ {
 			dg := NewTestDependencyGraph()
-			
+
 			for _, stepName := range stepNames {
 				err := dg.AddStep(stepName)
 				if err != nil {
@@ -89,7 +89,7 @@ func BenchmarkGraphOperations(b *testing.B) {
 			_ = dg.AddStep("StepA")
 			_ = dg.AddStep("StepB")
 			b.StartTimer()
-			
+
 			err := dg.AddDependency("StepB", "StepA")
 			if err != nil {
 				b.Fatalf("Failed to add dependency: %v", err)
@@ -123,18 +123,18 @@ func BenchmarkGraphOperations(b *testing.B) {
 
 		for i := 0; i < b.N; i++ {
 			dg := NewTestDependencyGraph()
-			
+
 			// Add all steps first
 			stepSet := make(map[string]bool)
 			for _, dep := range testDependencies {
 				stepSet[dep.From] = true
 				stepSet[dep.To] = true
 			}
-			
+
 			for stepName := range stepSet {
 				_ = dg.AddStep(stepName)
 			}
-			
+
 			// Add all dependencies
 			for _, dep := range testDependencies {
 				err := dg.AddDependency(dep.From, dep.To)
@@ -188,12 +188,12 @@ func BenchmarkDAGTopologicalSort(b *testing.B) {
 		// Create a linear dependency chain for comparison
 		dg := NewTestDependencyGraph()
 		stepCount := 15
-		
+
 		// Add steps
 		for i := 0; i < stepCount; i++ {
 			_ = dg.AddStep(fmt.Sprintf("Step_%d", i))
 		}
-		
+
 		// Add linear dependencies (Step_1 -> Step_0, Step_2 -> Step_1, etc.)
 		for i := 1; i < stepCount; i++ {
 			_ = dg.AddDependency(fmt.Sprintf("Step_%d", i), fmt.Sprintf("Step_%d", i-1))
@@ -211,17 +211,17 @@ func BenchmarkDAGTopologicalSort(b *testing.B) {
 	b.Run("TopologicalSort_TreeStructure_15Steps", func(b *testing.B) {
 		// Create a tree-like dependency structure
 		dg := NewTestDependencyGraph()
-		
+
 		// Add root
 		_ = dg.AddStep("Root")
-		
+
 		// Add level 1 (4 steps depending on root)
 		for i := 0; i < 4; i++ {
 			stepName := fmt.Sprintf("L1_Step_%d", i)
 			_ = dg.AddStep(stepName)
 			_ = dg.AddDependency(stepName, "Root")
 		}
-		
+
 		// Add level 2 (10 steps, 2-3 depending on each L1 step)
 		stepIndex := 0
 		for i := 0; i < 4; i++ {
@@ -229,7 +229,7 @@ func BenchmarkDAGTopologicalSort(b *testing.B) {
 			if i < 2 {
 				numChildren = 3 // First two L1 steps have 3 children each
 			}
-			
+
 			for j := 0; j < numChildren; j++ {
 				stepName := fmt.Sprintf("L2_Step_%d", stepIndex)
 				_ = dg.AddStep(stepName)
@@ -266,7 +266,7 @@ func BenchmarkCompleteDAGWorkflow(b *testing.B) {
 			if err != nil {
 				b.Fatalf("Failed to build installation graph: %v", err)
 			}
-			
+
 			// Get topological order
 			_, err = dg.GetTopologicalOrder()
 			if err != nil {
@@ -300,11 +300,11 @@ func TestPerformanceTarget(t *testing.T) {
 			start := time.Now()
 			_, err := dg.GetTopologicalOrder()
 			duration := time.Since(start)
-			
+
 			if err != nil {
 				t.Fatalf("Failed to get topological order: %v", err)
 			}
-			
+
 			totalTime += duration
 		}
 
@@ -325,7 +325,7 @@ func TestPerformanceTarget(t *testing.T) {
 
 	t.Run("GraphConstruction_PerformanceTarget_1ms", func(t *testing.T) {
 		config := &InstallConfig{AddRecommendedMCP: true}
-		
+
 		// Warm up
 		for i := 0; i < 10; i++ {
 			dg := NewDependencyGraph()
@@ -341,11 +341,11 @@ func TestPerformanceTarget(t *testing.T) {
 			dg := NewDependencyGraph()
 			err := dg.BuildInstallationGraph(config)
 			duration := time.Since(start)
-			
+
 			if err != nil {
 				t.Fatalf("Failed to build installation graph: %v", err)
 			}
-			
+
 			totalTime += duration
 		}
 
@@ -365,7 +365,7 @@ func TestPerformanceTarget(t *testing.T) {
 
 	t.Run("CombinedWorkflow_PerformanceTarget_2ms", func(t *testing.T) {
 		config := &InstallConfig{AddRecommendedMCP: true}
-		
+
 		// Warm up
 		for i := 0; i < 10; i++ {
 			dg := NewDependencyGraph()
@@ -379,20 +379,20 @@ func TestPerformanceTarget(t *testing.T) {
 
 		for i := 0; i < iterations; i++ {
 			start := time.Now()
-			
+
 			// Build graph
 			dg := NewDependencyGraph()
 			err := dg.BuildInstallationGraph(config)
 			if err != nil {
 				t.Fatalf("Failed to build installation graph: %v", err)
 			}
-			
+
 			// Get topological order
 			_, err = dg.GetTopologicalOrder()
 			if err != nil {
 				t.Fatalf("Failed to get topological order: %v", err)
 			}
-			
+
 			duration := time.Since(start)
 			totalTime += duration
 		}
@@ -415,17 +415,17 @@ func TestPerformanceTarget(t *testing.T) {
 // TestScalabilityCharacteristics tests how the DAG operations scale with graph size
 func TestScalabilityCharacteristics(t *testing.T) {
 	graphSizes := []int{5, 10, 15, 20, 30, 50}
-	
+
 	for _, size := range graphSizes {
 		t.Run(fmt.Sprintf("Scalability_LinearChain_%dSteps", size), func(t *testing.T) {
 			// Create linear dependency chain
 			dg := NewTestDependencyGraph()
-			
+
 			// Add steps
 			for i := 0; i < size; i++ {
 				_ = dg.AddStep(fmt.Sprintf("Step_%d", i))
 			}
-			
+
 			// Add linear dependencies
 			for i := 1; i < size; i++ {
 				_ = dg.AddDependency(fmt.Sprintf("Step_%d", i), fmt.Sprintf("Step_%d", i-1))
@@ -439,17 +439,17 @@ func TestScalabilityCharacteristics(t *testing.T) {
 				start := time.Now()
 				_, err := dg.GetTopologicalOrder()
 				duration := time.Since(start)
-				
+
 				if err != nil {
 					t.Fatalf("Failed to get topological order: %v", err)
 				}
-				
+
 				totalTime += duration
 			}
 
 			averageTime := totalTime / iterations
 			t.Logf("Graph size %d: average sort time %v", size, averageTime)
-			
+
 			// For linear chains, topological sort should remain very fast even at larger sizes
 			if size <= 20 && averageTime > time.Millisecond {
 				t.Errorf("Sort time too slow for size %d: %v > 1ms", size, averageTime)
