@@ -630,7 +630,7 @@ var errorScenarios = []ErrorScenario{
 			return os.Chmod(readOnlyDir, 0o555) // Read and execute only
 		},
 		ExpectedError: "permission denied",
-		ExpectedSteps: []string{"check_prerequisites"}, // Should fail early
+		ExpectedSteps: []string{"CheckPrerequisites"}, // Should fail early
 		CleanupFunc: func(targetDir string) error {
 			readOnlyDir := filepath.Join(targetDir, "readonly")
 			_ = os.Chmod(readOnlyDir, 0o755) // Restore permissions for cleanup
@@ -646,7 +646,7 @@ var errorScenarios = []ErrorScenario{
 			return nil
 		},
 		ExpectedError: "dependency not found",
-		ExpectedSteps: []string{"check_prerequisites"},
+		ExpectedSteps: []string{"CheckPrerequisites"},
 	},
 	{
 		Name:        "file_conflicts",
@@ -657,7 +657,7 @@ var errorScenarios = []ErrorScenario{
 			return os.WriteFile(claudeFile, []byte("existing content"), 0o644)
 		},
 		ExpectedError: "file already exists",
-		ExpectedSteps: []string{"check_prerequisites", "scan_existing_files"},
+		ExpectedSteps: []string{"CheckPrerequisites", "ScanExistingFiles"},
 	},
 	{
 		Name:        "validation_failure",
@@ -667,7 +667,7 @@ var errorScenarios = []ErrorScenario{
 			return nil
 		},
 		ExpectedError: "validation failed",
-		ExpectedSteps: []string{"check_prerequisites", "scan_existing_files", "create_directories"},
+		ExpectedSteps: []string{"CheckPrerequisites", "ScanExistingFiles", "CreateDirectoryStructure"},
 	},
 	{
 		Name:        "partial_installation",
@@ -677,7 +677,7 @@ var errorScenarios = []ErrorScenario{
 			return os.MkdirAll(filepath.Join(targetDir, ".claude"), 0o755)
 		},
 		ExpectedError: "", // May or may not error
-		ExpectedSteps: []string{"check_prerequisites", "scan_existing_files"},
+		ExpectedSteps: []string{"CheckPrerequisites", "ScanExistingFiles"},
 	},
 }
 
@@ -969,7 +969,7 @@ func TestErrorScenarioValidation(t *testing.T) {
 	// Test successful validation
 	result := BaselineTestResult{
 		TestName:       "test_error",
-		ExecutionOrder: []string{"check_prerequisites", "scan_existing_files"},
+		ExecutionOrder: []string{"CheckPrerequisites", "ScanExistingFiles"},
 		Success:        false,
 		ErrorMessage:   "permission denied while creating directory",
 	}
@@ -977,7 +977,7 @@ func TestErrorScenarioValidation(t *testing.T) {
 	scenario := ErrorScenario{
 		Name:          "permission_test",
 		ExpectedError: "permission denied",
-		ExpectedSteps: []string{"check_prerequisites"},
+		ExpectedSteps: []string{"CheckPrerequisites"},
 	}
 
 	issues := capture.ValidateErrorScenarioResult(&result, &scenario)
@@ -988,7 +988,7 @@ func TestErrorScenarioValidation(t *testing.T) {
 	// Test missing expected error
 	successResult := BaselineTestResult{
 		TestName:       "test_success",
-		ExecutionOrder: []string{"check_prerequisites", "scan_existing_files"},
+		ExecutionOrder: []string{"CheckPrerequisites", "ScanExistingFiles"},
 		Success:        true,
 		ErrorMessage:   "",
 	}
