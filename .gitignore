@@ -73,3 +73,6 @@ node_modules/
 # Task files
 tasks.json
 tasks/ 
+
+# Serena MCP cache files
+.serena/
