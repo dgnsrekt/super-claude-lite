@@ -1,3 +1,58 @@
+// Package installer provides a DAG-based dependency resolution system for managing
+// installation step execution order. The DependencyGraph ensures that installation
+// steps are executed in the correct order based on their dependencies, preventing
+// circular dependencies and providing clear error messages when dependency issues occur.
+//
+// The system replaces the previous manual dependency traversal approach with a more
+// robust and maintainable topological sorting mechanism using a directed acyclic graph.
+//
+// Example usage:
+//
+//	// Create a new dependency graph
+//	graph := NewDependencyGraph()
+//
+//	// Add installation steps
+//	if err := graph.AddStep("CheckPrerequisites"); err != nil {
+//		log.Fatal(err)
+//	}
+//	if err := graph.AddStep("CreateDirectories"); err != nil {
+//		log.Fatal(err)
+//	}
+//	if err := graph.AddStep("CopyFiles"); err != nil {
+//		log.Fatal(err)
+//	}
+//
+//	// Define dependencies (CreateDirectories depends on CheckPrerequisites)
+//	if err := graph.AddDependency("CreateDirectories", "CheckPrerequisites"); err != nil {
+//		log.Fatal(err)
+//	}
+//	// CopyFiles depends on CreateDirectories
+//	if err := graph.AddDependency("CopyFiles", "CreateDirectories"); err != nil {
+//		log.Fatal(err)
+//	}
+//
+//	// Get execution order
+//	order, err := graph.GetTopologicalOrder()
+//	if err != nil {
+//		// Handle cycle detection or other errors
+//		log.Fatalf("Dependency cycle detected: %v", err)
+//	}
+//
+//	// Execute steps in dependency order
+//	for _, stepName := range order {
+//		fmt.Printf("Executing step: %s\n", stepName)
+//		// executeStep(stepName)
+//	}
+//
+// For production use with real installation steps:
+//
+//	graph := NewDependencyGraph()
+//	config := &InstallConfig{AddRecommendedMCP: true}
+//	if err := graph.BuildInstallationGraph(config); err != nil {
+//		log.Fatal(err)
+//	}
+//	order, err := graph.GetTopologicalOrder()
+//	// ... execute installation steps
 package installer
 
 import (
@@ -25,6 +80,12 @@ type Dependency struct {
 
 // NewDependencyGraph creates a new DependencyGraph instance with an acyclic
 // directed graph to prevent circular dependencies at build time.
+//
+// The returned graph validates all step names against the available installation
+// steps defined in GetInstallSteps(). Use NewTestDependencyGraph() for testing
+// scenarios that require arbitrary step names.
+//
+// Returns a pointer to an initialized DependencyGraph ready for use.
 func NewDependencyGraph() *DependencyGraph {
 	return &DependencyGraph{
 		graph:              graph.New(graph.StringHash, graph.Directed(), graph.Acyclic()),
@@ -35,6 +96,12 @@ func NewDependencyGraph() *DependencyGraph {
 
 // NewTestDependencyGraph creates a DependencyGraph instance for testing
 // that skips installation step validation, allowing arbitrary step names.
+//
+// This constructor is intended for unit tests and should not be used in
+// production code. It bypasses step name validation, enabling tests to
+// use mock step names without requiring actual InstallStep implementations.
+//
+// Returns a pointer to an initialized DependencyGraph with validation disabled.
 func NewTestDependencyGraph() *DependencyGraph {
 	return &DependencyGraph{
 		graph:              graph.New(graph.StringHash, graph.Directed(), graph.Acyclic()),
@@ -44,7 +111,26 @@ func NewTestDependencyGraph() *DependencyGraph {
 }
 
 // AddStep adds an installation step as a vertex to the dependency graph.
-// Returns an error if the step has already been added.
+//
+// The stepName must be non-empty and correspond to a valid installation step
+// as defined in GetInstallSteps() (unless skipStepValidation is enabled for testing).
+// Each step can only be added once - subsequent attempts to add the same step
+// will return an error.
+//
+// Parameters:
+//   - stepName: The name of the installation step to add (e.g., "CheckPrerequisites")
+//
+// Returns an error if:
+//   - stepName is empty or contains only whitespace
+//   - stepName has already been added to this graph
+//   - stepName is not a valid installation step (in production mode)
+//
+// Example:
+//
+//	err := graph.AddStep("CheckPrerequisites")
+//	if err != nil {
+//		// Handle duplicate step or invalid step name
+//	}
 func (dg *DependencyGraph) AddStep(stepName string) error {
 	if strings.TrimSpace(stepName) == "" {
 		return fmt.Errorf("step name cannot be empty")
@@ -64,8 +150,28 @@ func (dg *DependencyGraph) AddStep(stepName string) error {
 }
 
 // AddDependency adds a dependency relationship between two steps.
+//
 // The 'from' step depends on the 'to' step, meaning 'to' must be executed before 'from'.
 // Both steps must have been added via AddStep() before calling this method.
+// This method will detect and prevent circular dependencies.
+//
+// Parameters:
+//   - from: The step that has a dependency (e.g., "CreateDirectories")
+//   - to: The step that must be executed first (e.g., "CheckPrerequisites")
+//
+// Returns an error if:
+//   - Either step name is empty or contains only whitespace
+//   - A step tries to depend on itself (from == to)
+//   - Either step has not been added to the graph via AddStep()
+//   - Adding this dependency would create a circular dependency
+//
+// Example:
+//
+//	// CreateDirectories depends on CheckPrerequisites
+//	err := graph.AddDependency("CreateDirectories", "CheckPrerequisites")
+//	if err != nil {
+//		// Handle missing steps or circular dependency
+//	}
 func (dg *DependencyGraph) AddDependency(from, to string) error {
 	if strings.TrimSpace(from) == "" || strings.TrimSpace(to) == "" {
 		return fmt.Errorf("dependency step names cannot be empty")
@@ -93,7 +199,30 @@ func (dg *DependencyGraph) AddDependency(from, to string) error {
 
 // GetTopologicalOrder returns the installation steps in topologically sorted order,
 // ensuring that dependencies are executed before the steps that depend on them.
-// Returns an error with detailed cycle information if the graph contains cycles.
+//
+// This method uses Kahn's algorithm via the underlying graph library to compute
+// a valid execution order. If the graph contains circular dependencies, it will
+// detect them and return a detailed error message showing the cycle path.
+//
+// Returns:
+//   - []string: A slice of step names in dependency order (dependencies first)
+//   - error: An error if cycles are detected, with detailed cycle path information
+//
+// The returned order guarantees that for any step S with dependencies D1, D2, ..., Dn,
+// all dependencies D1-Dn will appear before S in the returned slice.
+//
+// Example:
+//
+//	order, err := graph.GetTopologicalOrder()
+//	if err != nil {
+//		// Handle circular dependency error
+//		fmt.Printf("Cycle detected: %v", err)
+//		return
+//	}
+//	for _, stepName := range order {
+//		// Execute steps in dependency order
+//		executeStep(stepName)
+//	}
 func (dg *DependencyGraph) GetTopologicalOrder() ([]string, error) {
 	order, err := graph.TopologicalSort(dg.graph)
 	if err != nil {
@@ -226,6 +355,30 @@ func (dg *DependencyGraph) hasSelfLoop(step string) bool {
 // BuildInstallationGraph constructs the complete dependency graph for installation steps
 // based on the provided InstallConfig. This method consolidates all static and conditional
 // dependencies that were previously managed in the getDependencies() method.
+//
+// The method automatically adds all required installation steps and their dependencies,
+// including conditional dependencies based on the configuration (e.g., MCP-related steps
+// are only included if config.AddRecommendedMCP is true).
+//
+// Parameters:
+//   - config: Installation configuration that determines which optional dependencies to include
+//
+// Returns an error if:
+//   - Any step validation fails (invalid step names)
+//   - Circular dependencies are detected during graph construction
+//   - The resulting graph cannot be topologically sorted
+//
+// This method should be called once per DependencyGraph instance before calling
+// GetTopologicalOrder().
+//
+// Example:
+//
+//	graph := NewDependencyGraph()
+//	config := &InstallConfig{AddRecommendedMCP: true}
+//	err := graph.BuildInstallationGraph(config)
+//	if err != nil {
+//		// Handle graph construction error
+//	}
 func (dg *DependencyGraph) BuildInstallationGraph(config *InstallConfig) error {
 	// Define all static dependencies from the original getDependencies() map
 	staticDependencies := []Dependency{
@@ -394,6 +547,18 @@ func (dg *DependencyGraph) buildGraph(dependencies []Dependency) error {
 }
 
 // GetSteps returns a list of all steps that have been added to the graph.
+//
+// The returned slice contains the names of all steps that have been successfully
+// added via AddStep(). The order of steps in the returned slice is not guaranteed
+// to be deterministic - use GetTopologicalOrder() to get dependency-ordered steps.
+//
+// Returns:
+//   - []string: A slice containing all step names currently in the graph
+//
+// Example:
+//
+//	steps := graph.GetSteps()
+//	fmt.Printf("Graph contains %d steps: %v", len(steps), steps)
 func (dg *DependencyGraph) GetSteps() []string {
 	steps := make([]string, 0, len(dg.steps))
 	for step := range dg.steps {
@@ -403,12 +568,46 @@ func (dg *DependencyGraph) GetSteps() []string {
 }
 
 // HasStep returns true if the given step has been added to the graph.
+//
+// This method provides a quick way to check if a step exists in the graph
+// before attempting operations that require the step to be present.
+//
+// Parameters:
+//   - stepName: The name of the step to check for
+//
+// Returns:
+//   - bool: true if the step has been added via AddStep(), false otherwise
+//
+// Example:
+//
+//	if graph.HasStep("CheckPrerequisites") {
+//		// Step exists, safe to add dependencies
+//		graph.AddDependency("CreateDirectories", "CheckPrerequisites")
+//	}
 func (dg *DependencyGraph) HasStep(stepName string) bool {
 	return dg.steps[stepName]
 }
 
 // GetDependencies returns all direct dependencies for a given step.
-// Returns an error if the step has not been added to the graph.
+//
+// This method returns the steps that must be executed before the given step.
+// Only direct dependencies are returned - transitive dependencies are not included.
+// The returned dependencies are not guaranteed to be in any particular order.
+//
+// Parameters:
+//   - stepName: The name of the step to get dependencies for
+//
+// Returns:
+//   - []string: A slice of step names that are direct dependencies
+//   - error: An error if the step has not been added to the graph
+//
+// Example:
+//
+//	deps, err := graph.GetDependencies("CreateDirectories")
+//	if err != nil {
+//		// Handle step not found
+//	}
+//	fmt.Printf("CreateDirectories depends on: %v", deps)
 func (dg *DependencyGraph) GetDependencies(stepName string) ([]string, error) {
 	if !dg.HasStep(stepName) {
 		return nil, fmt.Errorf("step '%s' has not been added to the graph", stepName)
