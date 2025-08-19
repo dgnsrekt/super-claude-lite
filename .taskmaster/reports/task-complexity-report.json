@@ -1,0 +1,93 @@
+{
+	"meta": {
+		"generatedAt": "2025-08-18T23:41:07.742Z",
+		"tasksAnalyzed": 10,
+		"totalTasks": 10,
+		"analysisCount": 10,
+		"thresholdScore": 5,
+		"projectName": "Taskmaster",
+		"usedResearch": true
+	},
+	"complexityAnalysis": [
+		{
+			"taskId": 1,
+			"taskTitle": "Add DAG Library Dependency",
+			"complexityScore": 2,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Break down the dependency addition into: 1) Add the github.com/dominikbraun/graph dependency to go.mod with version pinning, 2) Run go mod tidy and verify compatibility with Go 1.24, 3) Create a minimal test to validate the library imports and basic functionality works.",
+			"reasoning": "Simple dependency addition task. The go.mod file exists and is clean, just need to add one dependency and validate. Low risk since the library has zero external dependencies."
+		},
+		{
+			"taskId": 2,
+			"taskTitle": "Create DependencyGraph Structure",
+			"complexityScore": 6,
+			"recommendedSubtasks": 5,
+			"expansionPrompt": "Split into: 1) Create internal/installer/dependency_graph.go file with DependencyGraph struct, 2) Implement NewDependencyGraph() constructor with graph.Acyclic() option, 3) Add AddStep() and AddDependency() methods, 4) Implement GetTopologicalOrder() method, 5) Create buildGraph() method with proper error handling for cycles and missing dependencies.",
+			"reasoning": "Moderate complexity. Requires understanding the graph library API, implementing wrapper methods, and handling error cases. The existing InstallStep structure is well-defined, making integration clearer."
+		},
+		{
+			"taskId": 3,
+			"taskTitle": "Implement Centralized Dependency Declaration",
+			"complexityScore": 7,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "Break down into: 1) Extract static dependencies from getDependencies() map (lines 96-107 in installer.go), 2) Move conditional ValidateInstallation dependencies logic (lines 110-116), 3) Move conditional CleanupTempFiles dependencies logic (lines 119-125), 4) Implement buildGraph() method in dependency_graph.go with InstallConfig-based conditional logic.",
+			"reasoning": "Higher complexity due to conditional dependencies based on InstallConfig.AddRecommendedMCP flag. Must preserve exact dependency relationships while moving logic between files. Critical for backward compatibility."
+		},
+		{
+			"taskId": 4,
+			"taskTitle": "Replace Manual Traversal with Topological Sort",
+			"complexityScore": 8,
+			"recommendedSubtasks": 5,
+			"expansionPrompt": "Split into: 1) Replace manual dependency traversal loop (lines 38-89 in installer.go Install() method), 2) Remove executed map and progress tracking logic, 3) Integrate GetTopologicalOrder() call from DependencyGraph, 4) Preserve step execution pattern (Execute() then Validate()), 5) Update error handling to leverage DAG cycle detection instead of generic 'possible circular dependency' error.",
+			"reasoning": "High complexity as it's the core algorithm change. Must maintain exact execution semantics while completely replacing the traversal logic. The current manual traversal is complex with progress tracking and error handling."
+		},
+		{
+			"taskId": 5,
+			"taskTitle": "Enhance Error Reporting",
+			"complexityScore": 4,
+			"recommendedSubtasks": 3,
+			"expansionPrompt": "Break into: 1) Implement cycle detection error reporting with specific step path details (e.g., 'A -> B -> C -> A'), 2) Add validation for missing step references in dependencies with clear error messages, 3) Replace generic 'possible circular dependency' error in installer.go line 86 with specific cycle details from graph library.",
+			"reasoning": "Moderate complexity focused on error handling. Leverages graph library's cycle detection capabilities. Mainly about improving user experience with better error messages."
+		},
+		{
+			"taskId": 6,
+			"taskTitle": "Create Comprehensive Unit Tests",
+			"complexityScore": 7,
+			"recommendedSubtasks": 6,
+			"expansionPrompt": "Divide into: 1) Create dependency_graph_test.go with DAG construction tests, 2) Add cycle detection and error scenario tests, 3) Test topological sorting with various dependency chains, 4) Create tests for conditional dependencies (MCP-related scenarios), 5) Update installer_test.go with integration tests for new dependency system, 6) Add performance benchmarks for graph operations targeting <1ms for ~15 nodes.",
+			"reasoning": "High complexity due to comprehensive testing requirements. Need to mock InstallContext/InstallConfig, test edge cases, and ensure >90% coverage. No existing test files found, so starting from scratch."
+		},
+		{
+			"taskId": 7,
+			"taskTitle": "Update Installer Integration",
+			"complexityScore": 5,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "Break into: 1) Add DependencyGraph field to Installer struct (line 9-12 in installer.go), 2) Update NewInstaller() constructor to create and initialize dependency graph, 3) Remove getDependencies() method (lines 95-131) as it's replaced by DAG, 4) Update any remaining references to manual dependency resolution throughout the codebase.",
+			"reasoning": "Moderate complexity involving struct changes and constructor updates. Well-defined integration points in existing code. Requires ensuring graph is properly initialized with current InstallConfig."
+		},
+		{
+			"taskId": 8,
+			"taskTitle": "Validate Existing Installation Scenarios",
+			"complexityScore": 8,
+			"recommendedSubtasks": 6,
+			"expansionPrompt": "Split into: 1) Test default configuration installation scenarios, 2) Test --add-mcp flag scenarios with conditional MCP dependencies, 3) Test --no-backup flag and dry-run mode functionality, 4) Validate existing file scenarios and permission handling, 5) Test rollback functionality still works with new system, 6) Verify InstallationSummary output remains unchanged and step execution order matches previous behavior.",
+			"reasoning": "High complexity integration testing. Must ensure no regression in complex installation scenarios. The installer has many conditional paths based on flags and existing files that must all be preserved."
+		},
+		{
+			"taskId": 9,
+			"taskTitle": "Performance Benchmarking",
+			"complexityScore": 3,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "Break into: 1) Create baseline performance measurements for current manual traversal system, 2) Implement Go benchmark tests for graph construction time, 3) Benchmark topological sort operations targeting <1ms for ~15 steps, 4) Profile memory usage and create performance regression tests to catch future slowdowns.",
+			"reasoning": "Low-moderate complexity. Standard Go benchmarking practices. The current system is small scale (~15 steps) so performance requirements are not demanding."
+		},
+		{
+			"taskId": 10,
+			"taskTitle": "Documentation and Code Cleanup",
+			"complexityScore": 3,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "Divide into: 1) Add comprehensive godoc comments to DependencyGraph struct and all public methods, 2) Remove deprecated getDependencies() method and related comments, 3) Update any existing documentation mentioning manual dependency system, 4) Add code examples in comments showing how to add new installation steps with dependencies, ensuring all examples are syntactically correct.",
+			"reasoning": "Low complexity cleanup and documentation task. Standard Go documentation practices. Main work is removing old code and adding proper documentation."
+		}
+	]
+}
