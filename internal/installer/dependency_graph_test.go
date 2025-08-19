@@ -12,7 +12,7 @@ import (
 // TestGraphConstruction tests the basic graph construction functionality
 func TestGraphConstruction(t *testing.T) {
 	t.Run("NewDependencyGraph creates empty graph", func(t *testing.T) {
-		dg := NewDependencyGraph()
+		dg := NewTestDependencyGraph()
 		if dg == nil {
 			t.Fatal("NewDependencyGraph() returned nil")
 		}
@@ -24,7 +24,7 @@ func TestGraphConstruction(t *testing.T) {
 	})
 
 	t.Run("AddStep adds single step successfully", func(t *testing.T) {
-		dg := NewDependencyGraph()
+		dg := NewTestDependencyGraph()
 		err := dg.AddStep("TestStep")
 		if err != nil {
 			t.Fatalf("AddStep failed: %v", err)
@@ -44,7 +44,7 @@ func TestGraphConstruction(t *testing.T) {
 	})
 
 	t.Run("AddStep fails with empty step name", func(t *testing.T) {
-		dg := NewDependencyGraph()
+		dg := NewTestDependencyGraph()
 		err := dg.AddStep("")
 		if err == nil {
 			t.Error("Expected error for empty step name, got nil")
@@ -55,7 +55,7 @@ func TestGraphConstruction(t *testing.T) {
 	})
 
 	t.Run("AddStep fails for duplicate steps", func(t *testing.T) {
-		dg := NewDependencyGraph()
+		dg := NewTestDependencyGraph()
 		err := dg.AddStep("DuplicateStep")
 		if err != nil {
 			t.Fatalf("First AddStep failed: %v", err)
@@ -71,7 +71,7 @@ func TestGraphConstruction(t *testing.T) {
 	})
 
 	t.Run("AddStep handles multiple unique steps", func(t *testing.T) {
-		dg := NewDependencyGraph()
+		dg := NewTestDependencyGraph()
 		steps := []string{"Step1", "Step2", "Step3", "Step4"}
 
 		for _, step := range steps {
@@ -96,7 +96,7 @@ func TestGraphConstruction(t *testing.T) {
 // TestAddDependency tests the dependency addition functionality
 func TestAddDependency(t *testing.T) {
 	t.Run("AddDependency works with valid steps", func(t *testing.T) {
-		dg := NewDependencyGraph()
+		dg := NewTestDependencyGraph()
 
 		// Add steps first
 		err := dg.AddStep("StepA")
@@ -125,7 +125,7 @@ func TestAddDependency(t *testing.T) {
 	})
 
 	t.Run("AddDependency fails with empty step names", func(t *testing.T) {
-		dg := NewDependencyGraph()
+		dg := NewTestDependencyGraph()
 
 		tests := []struct {
 			from, to string
@@ -148,7 +148,7 @@ func TestAddDependency(t *testing.T) {
 	})
 
 	t.Run("AddDependency fails for self-dependency", func(t *testing.T) {
-		dg := NewDependencyGraph()
+		dg := NewTestDependencyGraph()
 		err := dg.AddStep("SelfStep")
 		if err != nil {
 			t.Fatalf("Failed to add step: %v", err)
@@ -164,7 +164,7 @@ func TestAddDependency(t *testing.T) {
 	})
 
 	t.Run("AddDependency fails for non-existent steps", func(t *testing.T) {
-		dg := NewDependencyGraph()
+		dg := NewTestDependencyGraph()
 		err := dg.AddStep("ExistingStep")
 		if err != nil {
 			t.Fatalf("Failed to add step: %v", err)
@@ -190,7 +190,7 @@ func TestAddDependency(t *testing.T) {
 	})
 
 	t.Run("AddDependency handles multiple dependencies", func(t *testing.T) {
-		dg := NewDependencyGraph()
+		dg := NewTestDependencyGraph()
 
 		// Add steps
 		steps := []string{"Root", "Branch1", "Branch2", "Leaf"}
@@ -230,7 +230,7 @@ func TestAddDependency(t *testing.T) {
 // TestBuildGraph tests the buildGraph method with various scenarios
 func TestBuildGraph(t *testing.T) {
 	t.Run("buildGraph constructs simple graph", func(t *testing.T) {
-		dg := NewDependencyGraph()
+		dg := NewTestDependencyGraph()
 
 		dependencies := []Dependency{
 			{"StepB", "StepA"},
@@ -282,7 +282,7 @@ func TestBuildGraph(t *testing.T) {
 	})
 
 	t.Run("buildGraph handles complex dependencies", func(t *testing.T) {
-		dg := NewDependencyGraph()
+		dg := NewTestDependencyGraph()
 
 		// Create a diamond dependency pattern
 		dependencies := []Dependency{
@@ -326,7 +326,7 @@ func TestBuildGraph(t *testing.T) {
 	})
 
 	t.Run("buildGraph handles empty dependencies", func(t *testing.T) {
-		dg := NewDependencyGraph()
+		dg := NewTestDependencyGraph()
 
 		err := dg.buildGraph([]Dependency{})
 		if err != nil {
@@ -351,7 +351,7 @@ func TestBuildGraph(t *testing.T) {
 // TestGraphQueries tests the various query methods
 func TestGraphQueries(t *testing.T) {
 	t.Run("HasStep returns correct values", func(t *testing.T) {
-		dg := NewDependencyGraph()
+		dg := NewTestDependencyGraph()
 
 		if dg.HasStep("NonExistent") {
 			t.Error("HasStep returned true for non-existent step")
@@ -368,7 +368,7 @@ func TestGraphQueries(t *testing.T) {
 	})
 
 	t.Run("GetDependencies returns error for non-existent step", func(t *testing.T) {
-		dg := NewDependencyGraph()
+		dg := NewTestDependencyGraph()
 
 		_, err := dg.GetDependencies("NonExistent")
 		if err == nil {
@@ -380,7 +380,7 @@ func TestGraphQueries(t *testing.T) {
 	})
 
 	t.Run("GetDependencies returns empty for step with no dependencies", func(t *testing.T) {
-		dg := NewDependencyGraph()
+		dg := NewTestDependencyGraph()
 
 		err := dg.AddStep("IndependentStep")
 		if err != nil {
@@ -397,7 +397,7 @@ func TestGraphQueries(t *testing.T) {
 	})
 
 	t.Run("GetSteps returns all added steps", func(t *testing.T) {
-		dg := NewDependencyGraph()
+		dg := NewTestDependencyGraph()
 
 		expectedSteps := []string{"Alpha", "Beta", "Gamma", "Delta"}
 		for _, step := range expectedSteps {
@@ -429,7 +429,7 @@ func TestGraphQueries(t *testing.T) {
 // TestCycleDetection tests that the graph properly detects and prevents cycles
 func TestCycleDetection(t *testing.T) {
 	t.Run("simple cycle detection A->B->A", func(t *testing.T) {
-		dg := NewDependencyGraph()
+		dg := NewTestDependencyGraph()
 
 		// Add steps
 		err := dg.AddStep("StepA")
@@ -461,7 +461,7 @@ func TestCycleDetection(t *testing.T) {
 	})
 
 	t.Run("three-step cycle detection A->B->C->A", func(t *testing.T) {
-		dg := NewDependencyGraph()
+		dg := NewTestDependencyGraph()
 
 		// Add steps
 		steps := []string{"StepA", "StepB", "StepC"}
@@ -497,7 +497,7 @@ func TestCycleDetection(t *testing.T) {
 	})
 
 	t.Run("complex cycle in diamond pattern", func(t *testing.T) {
-		dg := NewDependencyGraph()
+		dg := NewTestDependencyGraph()
 
 		// Create diamond: A -> B,C -> D
 		steps := []string{"A", "B", "C", "D"}
@@ -537,7 +537,7 @@ func TestCycleDetection(t *testing.T) {
 	})
 
 	t.Run("self-dependency is prevented", func(t *testing.T) {
-		dg := NewDependencyGraph()
+		dg := NewTestDependencyGraph()
 
 		err := dg.AddStep("SelfDependent")
 		if err != nil {
@@ -554,7 +554,7 @@ func TestCycleDetection(t *testing.T) {
 	})
 
 	t.Run("buildGraph detects cycles", func(t *testing.T) {
-		dg := NewDependencyGraph()
+		dg := NewTestDependencyGraph()
 
 		// Create cyclic dependencies using buildGraph
 		cyclicDeps := []Dependency{
@@ -569,13 +569,13 @@ func TestCycleDetection(t *testing.T) {
 		}
 
 		errorStr := err.Error()
-		if !strings.Contains(errorStr, "cycle") && !strings.Contains(errorStr, "acyclic") {
+		if !strings.Contains(errorStr, "cycle") && !strings.Contains(errorStr, "acyclic") && !strings.Contains(errorStr, "circular") {
 			t.Errorf("Expected cycle-related error from buildGraph, got: %v", err)
 		}
 	})
 
 	t.Run("acyclic graph passes validation", func(t *testing.T) {
-		dg := NewDependencyGraph()
+		dg := NewTestDependencyGraph()
 
 		// Create valid acyclic dependencies
 		acyclicDeps := []Dependency{
@@ -607,7 +607,7 @@ func TestCycleDetection(t *testing.T) {
 // TestTopologicalSorting tests various topological sorting scenarios
 func TestTopologicalSorting(t *testing.T) {
 	t.Run("linear dependency chain", func(t *testing.T) {
-		dg := NewDependencyGraph()
+		dg := NewTestDependencyGraph()
 
 		// Create linear chain: A -> B -> C -> D
 		steps := []string{"A", "B", "C", "D"}
@@ -659,7 +659,7 @@ func TestTopologicalSorting(t *testing.T) {
 	})
 
 	t.Run("diamond dependency pattern", func(t *testing.T) {
-		dg := NewDependencyGraph()
+		dg := NewTestDependencyGraph()
 
 		// Create diamond: Root -> Branch1,Branch2 -> Leaf
 		steps := []string{"Root", "Branch1", "Branch2", "Leaf"}
@@ -712,7 +712,7 @@ func TestTopologicalSorting(t *testing.T) {
 	})
 
 	t.Run("complex multi-level hierarchy", func(t *testing.T) {
-		dg := NewDependencyGraph()
+		dg := NewTestDependencyGraph()
 
 		// Create complex hierarchy:
 		// Level 0: A
@@ -769,7 +769,7 @@ func TestTopologicalSorting(t *testing.T) {
 	})
 
 	t.Run("isolated nodes mixed with dependencies", func(t *testing.T) {
-		dg := NewDependencyGraph()
+		dg := NewTestDependencyGraph()
 
 		// Create graph with some isolated nodes and some with dependencies
 		steps := []string{"Isolated1", "A", "B", "Isolated2", "C"}
@@ -830,7 +830,7 @@ func TestTopologicalSorting(t *testing.T) {
 	})
 
 	t.Run("single node graph", func(t *testing.T) {
-		dg := NewDependencyGraph()
+		dg := NewTestDependencyGraph()
 
 		err := dg.AddStep("SingleNode")
 		if err != nil {
@@ -851,7 +851,7 @@ func TestTopologicalSorting(t *testing.T) {
 	})
 
 	t.Run("empty graph", func(t *testing.T) {
-		dg := NewDependencyGraph()
+		dg := NewTestDependencyGraph()
 
 		order, err := dg.GetTopologicalOrder()
 		if err != nil {
@@ -864,7 +864,7 @@ func TestTopologicalSorting(t *testing.T) {
 	})
 
 	t.Run("multiple root nodes", func(t *testing.T) {
-		dg := NewDependencyGraph()
+		dg := NewTestDependencyGraph()
 
 		// Create graph with multiple roots: Root1, Root2 -> Common
 		steps := []string{"Root1", "Root2", "Common"}
@@ -910,7 +910,7 @@ func TestTopologicalSorting(t *testing.T) {
 // TestIntegrationWithRealInstallerSteps tests the DependencyGraph with actual installer steps
 func TestIntegrationWithRealInstallerSteps(t *testing.T) {
 	t.Run("basic installer dependency graph", func(t *testing.T) {
-		dg := NewDependencyGraph()
+		dg := NewTestDependencyGraph()
 
 		// Create real installer dependencies (subset for testing)
 		dependencies := []Dependency{
@@ -983,7 +983,7 @@ func TestIntegrationWithRealInstallerSteps(t *testing.T) {
 	})
 
 	t.Run("installer with MCP configuration", func(t *testing.T) {
-		dg := NewDependencyGraph()
+		dg := NewTestDependencyGraph()
 
 		// Full dependency graph including MCP config steps
 		dependencies := []Dependency{
@@ -1043,7 +1043,7 @@ func TestIntegrationWithRealInstallerSteps(t *testing.T) {
 	})
 
 	t.Run("installer without MCP configuration", func(t *testing.T) {
-		dg := NewDependencyGraph()
+		dg := NewTestDependencyGraph()
 
 		// Dependency graph without MCP config
 		dependencies := []Dependency{
@@ -1101,7 +1101,7 @@ func TestIntegrationWithRealInstallerSteps(t *testing.T) {
 	})
 
 	t.Run("real installer step names validation", func(t *testing.T) {
-		dg := NewDependencyGraph()
+		dg := NewTestDependencyGraph()
 
 		// Get actual step names from the installer
 		realSteps := []string{
@@ -1145,7 +1145,7 @@ func TestIntegrationWithRealInstallerSteps(t *testing.T) {
 		// like those in ValidateInstallation and CleanupTempFiles
 
 		// Test scenario 1: MCP enabled
-		dg1 := NewDependencyGraph()
+		dg1 := NewTestDependencyGraph()
 		mcpEnabledDeps := []Dependency{
 			{"ValidateInstallation", "MergeOrCreateCLAUDEmd"},
 			{"ValidateInstallation", "MergeOrCreateMCPConfig"}, // MCP dependency
@@ -1163,7 +1163,7 @@ func TestIntegrationWithRealInstallerSteps(t *testing.T) {
 		}
 
 		// Test scenario 2: MCP disabled
-		dg2 := NewDependencyGraph()
+		dg2 := NewTestDependencyGraph()
 		mcpDisabledDeps := []Dependency{
 			{"ValidateInstallation", "MergeOrCreateCLAUDEmd"},
 			// No MCP dependency
@@ -1210,7 +1210,7 @@ func TestErrorHandling(t *testing.T) {
 	})
 
 	t.Run("empty and whitespace step names", func(t *testing.T) {
-		dg := NewDependencyGraph()
+		dg := NewTestDependencyGraph()
 
 		testCases := []struct {
 			stepName string
@@ -1235,7 +1235,7 @@ func TestErrorHandling(t *testing.T) {
 	})
 
 	t.Run("dependency errors with malformed input", func(t *testing.T) {
-		dg := NewDependencyGraph()
+		dg := NewTestDependencyGraph()
 
 		// Add some valid steps first
 		validSteps := []string{"ValidStep1", "ValidStep2"}
@@ -1273,7 +1273,7 @@ func TestErrorHandling(t *testing.T) {
 	})
 
 	t.Run("buildGraph with malformed dependencies", func(t *testing.T) {
-		dg := NewDependencyGraph()
+		dg := NewTestDependencyGraph()
 
 		malformedTestCases := []struct {
 			deps        []Dependency
@@ -1310,7 +1310,7 @@ func TestErrorHandling(t *testing.T) {
 	})
 
 	t.Run("large graph stress test", func(t *testing.T) {
-		dg := NewDependencyGraph()
+		dg := NewTestDependencyGraph()
 
 		// Create a large number of steps
 		numSteps := 1000
@@ -1354,7 +1354,7 @@ func TestErrorHandling(t *testing.T) {
 	t.Run("concurrent access simulation", func(t *testing.T) {
 		// Note: This is a basic concurrent access test. In production,
 		// proper synchronization would be needed for concurrent access.
-		dg := NewDependencyGraph()
+		dg := NewTestDependencyGraph()
 
 		// Add steps
 		steps := []string{"A", "B", "C", "D", "E"}
@@ -1391,7 +1391,7 @@ func TestErrorHandling(t *testing.T) {
 
 	t.Run("memory usage with repeated operations", func(t *testing.T) {
 		// Test for memory leaks or excessive allocation
-		dg := NewDependencyGraph()
+		dg := NewTestDependencyGraph()
 
 		// Repeatedly add and query steps
 		for i := 0; i < 100; i++ {
@@ -1413,7 +1413,7 @@ func TestErrorHandling(t *testing.T) {
 	})
 
 	t.Run("unicode and special characters in step names", func(t *testing.T) {
-		dg := NewDependencyGraph()
+		dg := NewTestDependencyGraph()
 
 		specialSteps := []string{
 			"Step-With-Dashes",
@@ -1443,7 +1443,7 @@ func TestErrorHandling(t *testing.T) {
 	})
 
 	t.Run("extremely long step names", func(t *testing.T) {
-		dg := NewDependencyGraph()
+		dg := NewTestDependencyGraph()
 
 		// Test with very long step name (1KB)
 		longStepName := strings.Repeat("VeryLongStepName", 64) // ~1KB
@@ -1479,7 +1479,7 @@ func TestErrorHandling(t *testing.T) {
 	})
 
 	t.Run("error message clarity and detail", func(t *testing.T) {
-		dg := NewDependencyGraph()
+		dg := NewTestDependencyGraph()
 
 		// Test that error messages provide clear, actionable information
 		err := dg.AddStep("")
@@ -1757,7 +1757,7 @@ func TestDependencyResolutionComparison(t *testing.T) {
 			}
 
 			t.Run(fmt.Sprintf("MCP %s", mcpDesc), func(t *testing.T) {
-				dg := NewDependencyGraph()
+				dg := NewTestDependencyGraph()
 				err := dg.BuildInstallationGraph(config)
 				if err != nil {
 					t.Fatalf("Failed to build installation graph with MCP %s: %v", mcpDesc, err)
@@ -2055,7 +2055,7 @@ func TestMCPConditionalLogic(t *testing.T) {
 	t.Run("MCP dependency count verification", func(t *testing.T) {
 		// Count dependencies with MCP enabled
 		mcpConfig := &InstallConfig{AddRecommendedMCP: true}
-		dgMcp := NewDependencyGraph()
+		dgMcp := NewTestDependencyGraph()
 		err := dgMcp.BuildInstallationGraph(mcpConfig)
 		if err != nil {
 			t.Fatalf("Failed to build MCP graph: %v", err)
@@ -2073,7 +2073,7 @@ func TestMCPConditionalLogic(t *testing.T) {
 
 		// Count dependencies with MCP disabled
 		noMcpConfig := &InstallConfig{AddRecommendedMCP: false}
-		dgNoMcp := NewDependencyGraph()
+		dgNoMcp := NewTestDependencyGraph()
 		err = dgNoMcp.BuildInstallationGraph(noMcpConfig)
 		if err != nil {
 			t.Fatalf("Failed to build no-MCP graph: %v", err)
@@ -2311,7 +2311,7 @@ func TestRealInstallerIntegration(t *testing.T) {
 
 		for i, config := range testConfigs {
 			t.Run(fmt.Sprintf("config_%d", i), func(t *testing.T) {
-				dg := NewDependencyGraph()
+				dg := NewTestDependencyGraph()
 				err := dg.BuildInstallationGraph(config)
 				if err != nil {
 					t.Fatalf("Failed to build installation graph for config %d: %v", i, err)
@@ -2467,7 +2467,7 @@ func TestRealInstallerIntegration(t *testing.T) {
 		// Create multiple graphs to test for memory leaks
 		var graphs []*DependencyGraph
 		for i := 0; i < 100; i++ {
-			dg := NewDependencyGraph()
+			dg := NewTestDependencyGraph()
 			err := dg.BuildInstallationGraph(config)
 			if err != nil {
 				t.Fatalf("Failed to build graph %d: %v", i, err)
@@ -2517,7 +2517,7 @@ func TestRegressionDependencyMapping(t *testing.T) {
 
 		// Test with non-MCP configuration
 		config := &InstallConfig{AddRecommendedMCP: false}
-		dg := NewDependencyGraph()
+		dg := NewTestDependencyGraph()
 		if err := dg.BuildInstallationGraph(config); err != nil {
 			t.Fatalf("Failed to build graph: %v", err)
 		}
@@ -2582,7 +2582,7 @@ func TestRegressionDependencyMapping(t *testing.T) {
 		for _, tc := range testCases {
 			t.Run(tc.name, func(t *testing.T) {
 				config := &InstallConfig{AddRecommendedMCP: tc.mcpEnabled}
-				dg := NewDependencyGraph()
+				dg := NewTestDependencyGraph()
 				if err := dg.BuildInstallationGraph(config); err != nil {
 					t.Fatalf("Failed to build graph: %v", err)
 				}
@@ -2625,7 +2625,7 @@ func TestRegressionDependencyMapping(t *testing.T) {
 			}
 
 			t.Run(configName, func(t *testing.T) {
-				dg := NewDependencyGraph()
+				dg := NewTestDependencyGraph()
 				if err := dg.BuildInstallationGraph(config); err != nil {
 					t.Fatalf("Failed to build graph: %v", err)
 				}
@@ -2667,7 +2667,7 @@ func TestRegressionDependencyMapping(t *testing.T) {
 
 	t.Run("EdgeCaseDependencyPreservation", func(t *testing.T) {
 		// Test edge cases that might have been missed during migration
-		dg := NewDependencyGraph()
+		dg := NewTestDependencyGraph()
 		config := &InstallConfig{AddRecommendedMCP: true}
 		if err := dg.BuildInstallationGraph(config); err != nil {
 			t.Fatalf("Failed to build graph: %v", err)
@@ -2736,7 +2736,7 @@ func TestMigrationValidation(t *testing.T) {
 			}
 
 			t.Run(configDesc, func(t *testing.T) {
-				dg := NewDependencyGraph()
+				dg := NewTestDependencyGraph()
 				if err := dg.BuildInstallationGraph(config); err != nil {
 					t.Fatalf("BuildInstallationGraph failed for %s: %v", configDesc, err)
 				}
@@ -2785,7 +2785,7 @@ func TestMigrationValidation(t *testing.T) {
 
 		// Test construction time
 		start := time.Now()
-		dg := NewDependencyGraph()
+		dg := NewTestDependencyGraph()
 		constructionTime := time.Since(start)
 
 		// Test BuildInstallationGraph time
@@ -2837,13 +2837,13 @@ func TestMigrationValidation(t *testing.T) {
 		// Test edge cases and error conditions that the migration should handle
 
 		// Test with nil config (should work)
-		dg1 := NewDependencyGraph()
+		dg1 := NewTestDependencyGraph()
 		if err := dg1.BuildInstallationGraph(nil); err != nil {
 			t.Errorf("BuildInstallationGraph failed with nil config: %v", err)
 		}
 
 		// Test multiple builds on same graph (should fail or be idempotent)
-		dg2 := NewDependencyGraph()
+		dg2 := NewTestDependencyGraph()
 		config := &InstallConfig{AddRecommendedMCP: false}
 		if err := dg2.BuildInstallationGraph(config); err != nil {
 			t.Errorf("First BuildInstallationGraph failed: %v", err)
@@ -2904,7 +2904,7 @@ func TestMigrationValidation(t *testing.T) {
 
 			t.Run(configName, func(t *testing.T) {
 				config := &InstallConfig{AddRecommendedMCP: mcpEnabled}
-				dg := NewDependencyGraph()
+				dg := NewTestDependencyGraph()
 				if err := dg.BuildInstallationGraph(config); err != nil {
 					t.Fatalf("BuildInstallationGraph failed: %v", err)
 				}
@@ -2968,4 +2968,289 @@ func getOriginalDependencies(stepName string, mcpEnabled bool) []string {
 		return deps
 	}
 	return []string{}
+}
+
+// TestMissingStepValidation tests that the dependency graph validates step references
+func TestMissingStepValidation(t *testing.T) {
+	t.Run("validateStepReferences detects missing steps", func(t *testing.T) {
+		dg := NewDependencyGraph()
+
+		// Create dependencies with some missing steps
+		invalidDeps := []Dependency{
+			{From: "ValidStep", To: "CheckPrerequisites"},       // CheckPrerequisites exists
+			{From: "NonExistentStep", To: "CheckPrerequisites"}, // NonExistentStep does not exist
+			{From: "ValidStep", To: "AnotherMissingStep"},       // AnotherMissingStep does not exist
+		}
+
+		err := dg.validateStepReferences(invalidDeps)
+		if err == nil {
+			t.Error("Expected error for missing step references, got nil")
+			return
+		}
+
+		errorStr := err.Error()
+		if !strings.Contains(errorStr, "NonExistentStep") {
+			t.Errorf("Expected error to mention NonExistentStep, got: %v", err)
+		}
+		if !strings.Contains(errorStr, "AnotherMissingStep") {
+			t.Errorf("Expected error to mention AnotherMissingStep, got: %v", err)
+		}
+		if !strings.Contains(errorStr, "Available steps:") {
+			t.Errorf("Expected error to list available steps, got: %v", err)
+		}
+	})
+
+	t.Run("validateStepReferences accepts valid steps", func(t *testing.T) {
+		dg := NewDependencyGraph()
+
+		// Create dependencies with only valid steps
+		validDeps := []Dependency{
+			{From: "ScanExistingFiles", To: "CheckPrerequisites"},
+			{From: "CreateBackups", To: "ScanExistingFiles"},
+			{From: "ValidateInstallation", To: "CopyCoreFiles"},
+		}
+
+		err := dg.validateStepReferences(validDeps)
+		if err != nil {
+			t.Errorf("Expected no error for valid step references, got: %v", err)
+		}
+	})
+
+	t.Run("buildGraph integration with missing step validation", func(t *testing.T) {
+		dg := NewDependencyGraph()
+
+		// Try to build graph with invalid dependencies
+		invalidDeps := []Dependency{
+			{From: "CheckPrerequisites", To: "NonExistentPrereq"},
+			{From: "ScanExistingFiles", To: "CheckPrerequisites"},
+		}
+
+		err := dg.buildGraph(invalidDeps)
+		if err == nil {
+			t.Error("Expected buildGraph to fail with missing step references")
+			return
+		}
+
+		errorStr := err.Error()
+		if !strings.Contains(errorStr, "NonExistentPrereq") {
+			t.Errorf("Expected error to mention NonExistentPrereq, got: %v", err)
+		}
+	})
+
+	t.Run("single missing step error message", func(t *testing.T) {
+		dg := NewDependencyGraph()
+
+		// Test single missing step
+		singleInvalidDep := []Dependency{
+			{From: "CheckPrerequisites", To: "NonExistentStep"},
+		}
+
+		err := dg.validateStepReferences(singleInvalidDep)
+		if err == nil {
+			t.Error("Expected error for single missing step reference")
+			return
+		}
+
+		errorStr := err.Error()
+		if !strings.Contains(errorStr, "unknown installation step 'NonExistentStep'") {
+			t.Errorf("Expected singular error message, got: %v", err)
+		}
+	})
+
+	t.Run("multiple missing steps error message", func(t *testing.T) {
+		dg := NewDependencyGraph()
+
+		// Test multiple missing steps
+		multipleInvalidDeps := []Dependency{
+			{From: "Missing1", To: "CheckPrerequisites"},
+			{From: "Missing2", To: "CheckPrerequisites"},
+			{From: "CheckPrerequisites", To: "Missing3"},
+		}
+
+		err := dg.validateStepReferences(multipleInvalidDeps)
+		if err == nil {
+			t.Error("Expected error for multiple missing step references")
+			return
+		}
+
+		errorStr := err.Error()
+		if !strings.Contains(errorStr, "3 unknown installation steps") {
+			t.Errorf("Expected plural error message mentioning count, got: %v", err)
+		}
+		// Check that missing steps are mentioned (order may vary due to map iteration)
+		if !strings.Contains(errorStr, "Missing1") || !strings.Contains(errorStr, "Missing2") || !strings.Contains(errorStr, "Missing3") {
+			t.Errorf("Expected all missing steps to be mentioned, got: %v", err)
+		}
+	})
+}
+
+// Performance Benchmarks for Task 6.6
+// Target: <1ms for ~15 nodes (typical installer step count)
+
+// BenchmarkGraphConstruction measures the time to create and populate a graph
+func BenchmarkGraphConstruction(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		dg := NewTestDependencyGraph()
+
+		// Add typical installer steps (~13 steps)
+		steps := []string{
+			"CheckPrerequisites", "ScanExistingFiles", "CreateBackups",
+			"CheckTargetDirectory", "CloneRepository", "CreateDirectoryStructure",
+			"CopyCoreFiles", "CopyCommandFiles", "MergeOrCreateCLAUDEmd",
+			"MergeOrCreateMCPConfig", "CreateCommandSymlink", "ValidateInstallation",
+			"CleanupTempFiles",
+		}
+
+		for _, step := range steps {
+			_ = dg.AddStep(step)
+		}
+	}
+}
+
+// BenchmarkDependencyAddition measures the time to add dependencies to a populated graph
+func BenchmarkDependencyAddition(b *testing.B) {
+	// Pre-create graph with steps
+	dg := NewTestDependencyGraph()
+	steps := []string{
+		"CheckPrerequisites", "ScanExistingFiles", "CreateBackups",
+		"CheckTargetDirectory", "CloneRepository", "CreateDirectoryStructure",
+		"CopyCoreFiles", "CopyCommandFiles", "MergeOrCreateCLAUDEmd",
+		"MergeOrCreateMCPConfig", "CreateCommandSymlink", "ValidateInstallation",
+		"CleanupTempFiles",
+	}
+
+	for _, step := range steps {
+		_ = dg.AddStep(step)
+	}
+
+	// Define typical dependencies
+	dependencies := []Dependency{
+		{From: "ScanExistingFiles", To: "CheckPrerequisites"},
+		{From: "CreateBackups", To: "ScanExistingFiles"},
+		{From: "CheckTargetDirectory", To: "CreateBackups"},
+		{From: "CloneRepository", To: "CheckTargetDirectory"},
+		{From: "CreateDirectoryStructure", To: "CheckTargetDirectory"},
+		{From: "CopyCoreFiles", To: "CloneRepository"},
+		{From: "CopyCommandFiles", To: "CreateDirectoryStructure"},
+		{From: "MergeOrCreateCLAUDEmd", To: "CreateDirectoryStructure"},
+		{From: "CreateCommandSymlink", To: "CopyCommandFiles"},
+		{From: "ValidateInstallation", To: "CopyCoreFiles"},
+		{From: "CleanupTempFiles", To: "ValidateInstallation"},
+	}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		// Create fresh graph for each iteration
+		testDg := NewTestDependencyGraph()
+		for _, step := range steps {
+			_ = testDg.AddStep(step)
+		}
+
+		// Add all dependencies
+		for _, dep := range dependencies {
+			_ = testDg.AddDependency(dep.From, dep.To)
+		}
+	}
+}
+
+// BenchmarkTopologicalSort measures the time to perform topological sorting
+func BenchmarkTopologicalSort(b *testing.B) {
+	// Pre-create and populate graph
+	dg := NewTestDependencyGraph()
+	dependencies := []Dependency{
+		{From: "ScanExistingFiles", To: "CheckPrerequisites"},
+		{From: "CreateBackups", To: "ScanExistingFiles"},
+		{From: "CheckTargetDirectory", To: "CreateBackups"},
+		{From: "CloneRepository", To: "CheckTargetDirectory"},
+		{From: "CreateDirectoryStructure", To: "CheckTargetDirectory"},
+		{From: "CopyCoreFiles", To: "CloneRepository"},
+		{From: "CopyCommandFiles", To: "CreateDirectoryStructure"},
+		{From: "MergeOrCreateCLAUDEmd", To: "CreateDirectoryStructure"},
+		{From: "CreateCommandSymlink", To: "CopyCommandFiles"},
+		{From: "ValidateInstallation", To: "CopyCoreFiles"},
+		{From: "CleanupTempFiles", To: "ValidateInstallation"},
+	}
+
+	_ = dg.buildGraph(dependencies)
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, _ = dg.GetTopologicalOrder()
+	}
+}
+
+// BenchmarkBuildInstallationGraph measures the time to build the complete installer graph
+func BenchmarkBuildInstallationGraph(b *testing.B) {
+	config := &InstallConfig{AddRecommendedMCP: true}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		dg := NewDependencyGraph() // Use production version for real validation
+		_ = dg.BuildInstallationGraph(config)
+	}
+}
+
+// BenchmarkCompleteWorkflow measures end-to-end performance of typical dependency operations
+func BenchmarkCompleteWorkflow(b *testing.B) {
+	config := &InstallConfig{AddRecommendedMCP: true}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		// Complete workflow: create graph, build dependencies, get order
+		dg := NewDependencyGraph()
+		_ = dg.BuildInstallationGraph(config)
+		_, _ = dg.GetTopologicalOrder()
+
+		// Query operations
+		steps := dg.GetSteps()
+		for _, step := range steps[:3] { // Test a few step queries
+			_, _ = dg.GetDependencies(step)
+		}
+	}
+}
+
+// BenchmarkCycleDetection measures performance of cycle detection algorithms
+func BenchmarkCycleDetection(b *testing.B) {
+	// Create a graph that will trigger cycle detection
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		dg := NewTestDependencyGraph()
+		steps := []string{"A", "B", "C", "D", "E"}
+
+		for _, step := range steps {
+			_ = dg.AddStep(step)
+		}
+
+		// Add dependencies that create a cycle
+		_ = dg.AddDependency("A", "B")
+		_ = dg.AddDependency("B", "C")
+		_ = dg.AddDependency("C", "D")
+		_ = dg.AddDependency("D", "E")
+		_ = dg.AddDependency("E", "A") // Creates cycle
+
+		// This will trigger cycle detection
+		_, _ = dg.GetTopologicalOrder()
+	}
+}
+
+// BenchmarkLargeGraph measures performance with larger graphs (stress test)
+func BenchmarkLargeGraph(b *testing.B) {
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		dg := NewTestDependencyGraph()
+
+		// Create a larger graph with 50 steps
+		steps := make([]string, 50)
+		for j := 0; j < 50; j++ {
+			steps[j] = fmt.Sprintf("Step%d", j)
+			_ = dg.AddStep(steps[j])
+		}
+
+		// Add linear dependencies
+		for j := 1; j < 50; j++ {
+			_ = dg.AddDependency(steps[j], steps[j-1])
+		}
+
+		_, _ = dg.GetTopologicalOrder()
+	}
 }
