@@ -1,6 +1,7 @@
 package installer
 
 import (
+	"bytes"
 	"fmt"
 	"log"
 	"os"
@@ -66,7 +67,7 @@ func (h *EquivalenceTestHarness) SetupTestEnvironment(t *testing.T) (dagDir, man
 }
 
 // CreateIdenticalEnvironment sets up identical file systems for both approaches
-func (h *EquivalenceTestHarness) CreateIdenticalEnvironment(t *testing.T, dagDir, manualDir string, scenario EquivalenceTestScenario) {
+func (h *EquivalenceTestHarness) CreateIdenticalEnvironment(t *testing.T, dagDir, manualDir string, scenario *EquivalenceTestScenario) {
 	t.Helper()
 
 	// Create identical files in both directories based on scenario
@@ -390,7 +391,7 @@ func extractCompletedSteps(trace []ExecutionEvent) []string {
 	}
 
 	// Convert to sorted slice for consistent comparison
-	var steps []string
+	steps := make([]string, 0, len(stepSet))
 	for step := range stepSet {
 		steps = append(steps, step)
 	}
@@ -488,18 +489,9 @@ func analyzeOptimizationDifferences(t *testing.T, dagOrder, manualOrder []string
 }
 
 // extractStepSequence extracts the sequence of step names and event types (legacy function for compatibility)
-func extractStepSequence(trace []ExecutionEvent) []string {
-	var sequence []string
-	for _, event := range trace {
-		if event.EventType != "execution_order" { // Skip metadata events
-			sequence = append(sequence, fmt.Sprintf("%s:%s", event.StepName, event.EventType))
-		}
-	}
-	return sequence
-}
 
 // CompareInstallationSummaries compares installation summaries between approaches
-func CompareInstallationSummaries(t *testing.T, dagSummary, manualSummary InstallationSummary) {
+func CompareInstallationSummaries(t *testing.T, dagSummary, manualSummary *InstallationSummary) {
 	t.Helper()
 
 	// Compare completed steps (order might differ due to topological sorting)
@@ -731,7 +723,7 @@ func TestMCPConfigurationEquivalence(t *testing.T) {
 			dagDir, manualDir := harness.SetupTestEnvironment(t)
 
 			// Create identical starting environments
-			harness.CreateIdenticalEnvironment(t, dagDir, manualDir, scenario)
+			harness.CreateIdenticalEnvironment(t, dagDir, manualDir, &scenario)
 
 			// Create separate loggers for each approach
 			dagLogger := &TestLogger{}
@@ -766,7 +758,7 @@ func TestMCPConfigurationEquivalence(t *testing.T) {
 				// Compare installation summaries
 				dagSummary := dagInstaller.GetInstallationSummary()
 				manualSummary := manualInstaller.GetInstallationSummary()
-				CompareInstallationSummaries(t, dagSummary, manualSummary)
+				CompareInstallationSummaries(t, &dagSummary, &manualSummary)
 
 				// Verify MCP configuration behavior specifically
 				VerifyMCPConfigurationBehavior(t, dagDir, manualDir, scenario.Config.AddRecommendedMCP)
@@ -851,7 +843,7 @@ func VerifyMCPConfigurationBehavior(t *testing.T, dagDir, manualDir string, mcpE
 			return
 		}
 
-		if string(dagContent) != string(manualContent) {
+		if !bytes.Equal(dagContent, manualContent) {
 			t.Errorf("MCP file contents differ:\nDAG content: %s\nManual content: %s",
 				string(dagContent), string(manualContent))
 		} else {
@@ -886,8 +878,8 @@ func hasStepInTrace(trace []ExecutionEvent, stepName string) bool {
 }
 
 // testFileExists checks if a file exists (renamed to avoid conflict with context.go)
-func testFileExists(filepath string) bool {
-	_, err := os.Stat(filepath)
+func testFileExists(filePath string) bool {
+	_, err := os.Stat(filePath)
 	return err == nil
 }
 
@@ -908,7 +900,7 @@ func TestFunctionalEquivalence(t *testing.T) {
 			dagDir, manualDir := harness.SetupTestEnvironment(t)
 
 			// Create identical starting environments
-			harness.CreateIdenticalEnvironment(t, dagDir, manualDir, scenario)
+			harness.CreateIdenticalEnvironment(t, dagDir, manualDir, &scenario)
 
 			// Create separate loggers for each approach
 			dagLogger := &TestLogger{}
@@ -943,7 +935,7 @@ func TestFunctionalEquivalence(t *testing.T) {
 				// Compare installation summaries
 				dagSummary := dagInstaller.GetInstallationSummary()
 				manualSummary := manualInstaller.GetInstallationSummary()
-				CompareInstallationSummaries(t, dagSummary, manualSummary)
+				CompareInstallationSummaries(t, &dagSummary, &manualSummary)
 
 				// Log success
 				t.Logf("✅ Equivalence verified for scenario: %s", scenario.Name)
@@ -994,7 +986,7 @@ func TestCompletionTrackingEquivalence(t *testing.T) {
 	dagDir, manualDir := harness.SetupTestEnvironment(t)
 
 	// Create identical starting environments
-	harness.CreateIdenticalEnvironment(t, dagDir, manualDir, scenario)
+	harness.CreateIdenticalEnvironment(t, dagDir, manualDir, &scenario)
 
 	// Create separate loggers for each approach
 	dagLogger := &TestLogger{}
@@ -1233,7 +1225,7 @@ func TestInstallationSummaryEquivalence(t *testing.T) {
 			dagDir, manualDir := harness.SetupTestEnvironment(t)
 
 			// Create identical starting environments
-			harness.CreateIdenticalEnvironment(t, dagDir, manualDir, scenario)
+			harness.CreateIdenticalEnvironment(t, dagDir, manualDir, &scenario)
 
 			// Create separate loggers for each approach
 			dagLogger := &TestLogger{}
@@ -1268,7 +1260,7 @@ func TestInstallationSummaryEquivalence(t *testing.T) {
 			manualSummary := manualInstaller.GetInstallationSummary()
 
 			// Compare summaries in detail
-			CompareDetailedInstallationSummaries(t, dagSummary, manualSummary, scenario.Config)
+			CompareDetailedInstallationSummaries(t, &dagSummary, &manualSummary, scenario.Config)
 
 			t.Logf("✅ Installation summary equivalence verified for scenario: %s", scenario.Name)
 		})
@@ -1303,7 +1295,7 @@ func TestErrorPropagationEquivalence(t *testing.T) {
 	dagDir, manualDir := harness.SetupTestEnvironment(t)
 
 	// Create identical starting environments
-	harness.CreateIdenticalEnvironment(t, dagDir, manualDir, scenario)
+	harness.CreateIdenticalEnvironment(t, dagDir, manualDir, &scenario)
 
 	// Create separate loggers for each approach
 	dagLogger := &TestLogger{}
@@ -1333,7 +1325,7 @@ func TestErrorPropagationEquivalence(t *testing.T) {
 }
 
 // CompareDetailedInstallationSummaries provides comprehensive summary comparison
-func CompareDetailedInstallationSummaries(t *testing.T, dagSummary, manualSummary InstallationSummary, config *InstallConfig) {
+func CompareDetailedInstallationSummaries(t *testing.T, dagSummary, manualSummary *InstallationSummary, config *InstallConfig) {
 	t.Helper()
 
 	// Compare basic directory information
@@ -1507,7 +1499,7 @@ func TestBasicEquivalenceInfrastructure(t *testing.T) {
 		},
 	}
 
-	harness.CreateIdenticalEnvironment(t, dagDir, manualDir, scenario)
+	harness.CreateIdenticalEnvironment(t, dagDir, manualDir, &scenario)
 
 	// Verify files were created in both directories
 	dagFile := filepath.Join(dagDir, "test.txt")
@@ -1523,7 +1515,7 @@ func TestBasicEquivalenceInfrastructure(t *testing.T) {
 		t.Errorf("Failed to read manual test file: %v", err)
 	}
 
-	if string(dagContent) != string(manualContent) {
+	if !bytes.Equal(dagContent, manualContent) {
 		t.Errorf("File contents differ:\nDAG: %s\nManual: %s", dagContent, manualContent)
 	}
 
