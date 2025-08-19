@@ -156,10 +156,11 @@ func (bc *BaselineCapture) CaptureExecutionOrder(installer *Installer, scenario 
 
 // createInstrumentedInstaller creates a copy of the installer with execution tracking
 func (bc *BaselineCapture) createInstrumentedInstaller(original *Installer, result *BaselineTestResult) *Installer {
-	// Create a new installer with the same context
+	// Create a new installer with the same context and dependency graph
 	instrumented := &Installer{
 		steps:   make(map[string]*InstallStep),
 		context: original.context,
+		graph:   original.graph,
 	}
 
 	// Copy and instrument each step

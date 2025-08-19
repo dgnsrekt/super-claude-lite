@@ -9,6 +9,7 @@ import (
 type Installer struct {
 	steps   map[string]*InstallStep
 	context *InstallContext
+	graph   *DependencyGraph
 }
 
 // NewInstaller creates a new installer instance
@@ -18,9 +19,16 @@ func NewInstaller(targetDir string, config *InstallConfig) (*Installer, error) {
 		return nil, fmt.Errorf("failed to create install context: %w", err)
 	}
 
+	// Create and initialize dependency graph
+	dependencyGraph := NewDependencyGraph()
+	if err := dependencyGraph.BuildInstallationGraph(config); err != nil {
+		return nil, fmt.Errorf("failed to build dependency graph: %w", err)
+	}
+
 	installer := &Installer{
 		steps:   GetInstallSteps(),
 		context: context,
+		graph:   dependencyGraph,
 	}
 
 	return installer, nil
@@ -30,14 +38,8 @@ func NewInstaller(targetDir string, config *InstallConfig) (*Installer, error) {
 func (i *Installer) Install() error {
 	log.Printf("Starting SuperClaude installation")
 
-	// Create dependency graph and build installation graph
-	dependencyGraph := NewDependencyGraph()
-	if err := dependencyGraph.BuildInstallationGraph(i.context.Config); err != nil {
-		return fmt.Errorf("failed to build dependency graph: %w", err)
-	}
-
-	// Get topological ordering from the dependency graph
-	executionOrder, err := dependencyGraph.GetTopologicalOrder()
+	// Get topological ordering from the pre-built dependency graph
+	executionOrder, err := i.graph.GetTopologicalOrder()
 	if err != nil {
 		return fmt.Errorf("failed to determine execution order: %w", err)
 	}
