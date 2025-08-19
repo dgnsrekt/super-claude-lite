@@ -1519,17 +1519,11 @@ func TestErrorHandling(t *testing.T) {
 // with the new BuildInstallationGraph method to ensure identical behavior
 func TestDependencyResolutionComparison(t *testing.T) {
 	t.Run("compare MCP enabled configuration", func(t *testing.T) {
-		// Create a mock installer to access the old getDependencies method
+		// Configuration for MCP enabled test
 		config := &InstallConfig{
 			AddRecommendedMCP: true,
 		}
-
-		installer := &Installer{
-			steps: GetInstallSteps(),
-			context: &InstallContext{
-				Config: config,
-			},
-		}
+		mcpEnabled := config.AddRecommendedMCP
 
 		// Create new dependency graph with same configuration
 		dg := NewDependencyGraph()
@@ -1564,7 +1558,7 @@ func TestDependencyResolutionComparison(t *testing.T) {
 
 		// For each step, compare dependencies between old and new system
 		for _, stepName := range allSteps {
-			oldDeps := installer.getDependencies(stepName)
+			oldDeps := getOriginalDependencies(stepName, mcpEnabled)
 			newDeps, err := dg.GetDependencies(stepName)
 			if err != nil {
 				t.Errorf("Failed to get dependencies for step %s: %v", stepName, err)
@@ -1643,17 +1637,11 @@ func TestDependencyResolutionComparison(t *testing.T) {
 	})
 
 	t.Run("compare MCP disabled configuration", func(t *testing.T) {
-		// Create a mock installer to access the old getDependencies method
+		// Configuration for MCP disabled test
 		config := &InstallConfig{
 			AddRecommendedMCP: false,
 		}
-
-		installer := &Installer{
-			steps: GetInstallSteps(),
-			context: &InstallContext{
-				Config: config,
-			},
-		}
+		mcpEnabled := config.AddRecommendedMCP
 
 		// Create new dependency graph with same configuration
 		dg := NewDependencyGraph()
@@ -1681,7 +1669,7 @@ func TestDependencyResolutionComparison(t *testing.T) {
 
 		// For each step, compare dependencies between old and new system
 		for _, stepName := range allSteps {
-			oldDeps := installer.getDependencies(stepName)
+			oldDeps := getOriginalDependencies(stepName, mcpEnabled)
 
 			if !dg.HasStep(stepName) {
 				// If step doesn't exist in new graph, old deps should be empty
@@ -2940,4 +2928,44 @@ func TestMigrationValidation(t *testing.T) {
 			})
 		}
 	})
+}
+
+// getOriginalDependencies replicates the logic from the old getDependencies method
+// This is used for testing compatibility between old and new dependency systems
+func getOriginalDependencies(stepName string, mcpEnabled bool) []string {
+	dependencies := map[string][]string{
+		"ScanExistingFiles":        {"CheckPrerequisites"},
+		"CreateBackups":            {"ScanExistingFiles"},
+		"CheckTargetDirectory":     {"CreateBackups"},
+		"CloneRepository":          {"CheckTargetDirectory"},
+		"CreateDirectoryStructure": {"CheckTargetDirectory"},
+		"CopyCoreFiles":            {"CloneRepository", "CreateDirectoryStructure"},
+		"CopyCommandFiles":         {"CloneRepository", "CreateDirectoryStructure"},
+		"MergeOrCreateCLAUDEmd":    {"CreateDirectoryStructure"},
+		"MergeOrCreateMCPConfig":   {"CreateDirectoryStructure"},
+		"CreateCommandSymlink":     {"CopyCommandFiles", "CreateDirectoryStructure"},
+	}
+
+	// ValidateInstallation dependencies change based on whether MCP config is enabled
+	if stepName == "ValidateInstallation" {
+		validateDeps := []string{"CopyCoreFiles", "CopyCommandFiles", "MergeOrCreateCLAUDEmd", "CreateCommandSymlink"}
+		if mcpEnabled {
+			validateDeps = append(validateDeps, "MergeOrCreateMCPConfig")
+		}
+		return validateDeps
+	}
+
+	// CleanupTempFiles runs after everything else including validation
+	if stepName == "CleanupTempFiles" {
+		cleanupDeps := []string{"CopyCoreFiles", "CopyCommandFiles", "MergeOrCreateCLAUDEmd", "CreateCommandSymlink", "ValidateInstallation"}
+		if mcpEnabled {
+			cleanupDeps = append(cleanupDeps, "MergeOrCreateMCPConfig")
+		}
+		return cleanupDeps
+	}
+
+	if deps, ok := dependencies[stepName]; ok {
+		return deps
+	}
+	return []string{}
 }
