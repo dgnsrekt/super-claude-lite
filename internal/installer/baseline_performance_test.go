@@ -347,18 +347,6 @@ func BenchmarkMemoryAllocation(b *testing.B) {
 	})
 }
 
-// Helper function for consistent test setup
-func setupBenchmarkEnvironment(b *testing.B) (string, *InstallConfig) {
-	tempDir := b.TempDir()
-	config := &InstallConfig{
-		NoBackup:          true,
-		Interactive:       false,
-		AddRecommendedMCP: true,
-		Force:             false,
-	}
-	return tempDir, config
-}
-
 // Performance validation test that can be run in CI
 func TestBaselinePerformanceRegression(t *testing.T) {
 	if testing.Short() {
