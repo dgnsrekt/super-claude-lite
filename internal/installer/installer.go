@@ -9,6 +9,7 @@ import (
 type Installer struct {
 	steps   map[string]*InstallStep
 	context *InstallContext
+	graph   *DependencyGraph
 }
 
 // NewInstaller creates a new installer instance
@@ -18,116 +19,58 @@ func NewInstaller(targetDir string, config *InstallConfig) (*Installer, error) {
 		return nil, fmt.Errorf("failed to create install context: %w", err)
 	}
 
+	// Create and initialize dependency graph
+	dependencyGraph := NewDependencyGraph()
+	if err := dependencyGraph.BuildInstallationGraph(config); err != nil {
+		return nil, fmt.Errorf("failed to build dependency graph: %w", err)
+	}
+
 	installer := &Installer{
 		steps:   GetInstallSteps(),
 		context: context,
+		graph:   dependencyGraph,
 	}
 
 	return installer, nil
 }
 
-// Install executes the installation process
+// Install executes the installation process using DAG-based topological sorting
 func (i *Installer) Install() error {
 	log.Printf("Starting SuperClaude installation")
 
-	// Get topological ordering using manual traversal
-	executed := make(map[string]bool)
-	var installationError error
+	// Get topological ordering from the pre-built dependency graph
+	executionOrder, err := i.graph.GetTopologicalOrder()
+	if err != nil {
+		return fmt.Errorf("failed to determine execution order: %w", err)
+	}
 
-	// Continue until all steps are executed or we hit an error
-	for len(executed) < len(i.steps) && installationError == nil {
-		progress := false
+	// Execute steps in topological order
+	for _, stepName := range executionOrder {
+		step, exists := i.steps[stepName]
+		if !exists {
+			return fmt.Errorf("step '%s' not found in available steps", stepName)
+		}
 
-		// Find steps that can be executed (all dependencies satisfied)
-		for stepName, step := range i.steps {
-			if executed[stepName] {
-				continue // Already executed
-			}
+		log.Printf("Executing step: %s", step.Name)
 
-			// Check if all dependencies are satisfied
-			canExecute := true
-			dependencies := i.getDependencies(stepName)
-			for _, dep := range dependencies {
-				if !executed[dep] {
-					canExecute = false
-					break
-				}
-			}
+		// Execute the step
+		if err := step.Execute(i.context); err != nil {
+			return fmt.Errorf("execution failed for step %s: %w", step.Name, err)
+		}
 
-			// Skip logging individual dependency waits to reduce noise
-
-			if canExecute {
-				log.Printf("Executing step: %s", step.Name)
-
-				// Execute the step
-				if err := step.Execute(i.context); err != nil {
-					installationError = fmt.Errorf("execution failed for step %s: %w", step.Name, err)
-					break
-				}
-
-				// Run validation if defined (after execution)
-				if step.Validate != nil {
-					if err := step.Validate(i.context); err != nil {
-						installationError = fmt.Errorf("validation failed for step %s: %w", step.Name, err)
-						break
-					}
-				}
-
-				// Mark step as completed
-				executed[stepName] = true
-				i.context.Completed = append(i.context.Completed, step.Name)
-				log.Printf("Completed step: %s", step.Name)
-				progress = true
+		// Run validation if defined (after execution)
+		if step.Validate != nil {
+			if err := step.Validate(i.context); err != nil {
+				return fmt.Errorf("validation failed for step %s: %w", step.Name, err)
 			}
 		}
 
-		// If we didn't make progress, we have a circular dependency or missing step
-		if !progress {
-			installationError = fmt.Errorf("cannot resolve dependencies - possible circular dependency")
-			break
-		}
+		// Mark step as completed
+		i.context.Completed = append(i.context.Completed, step.Name)
+		log.Printf("Completed step: %s", step.Name)
 	}
 
-	return installationError
-}
-
-// getDependencies returns the dependencies for a given step
-func (i *Installer) getDependencies(stepName string) []string {
-	dependencies := map[string][]string{
-		"ScanExistingFiles":        {"CheckPrerequisites"},
-		"CreateBackups":            {"ScanExistingFiles"},
-		"CheckTargetDirectory":     {"CreateBackups"},
-		"CloneRepository":          {"CheckTargetDirectory"},
-		"CreateDirectoryStructure": {"CheckTargetDirectory"},
-		"CopyCoreFiles":            {"CloneRepository", "CreateDirectoryStructure"},
-		"CopyCommandFiles":         {"CloneRepository", "CreateDirectoryStructure"},
-		"MergeOrCreateCLAUDEmd":    {"CreateDirectoryStructure"},
-		"MergeOrCreateMCPConfig":   {"CreateDirectoryStructure"},
-		"CreateCommandSymlink":     {"CopyCommandFiles", "CreateDirectoryStructure"},
-	}
-
-	// ValidateInstallation dependencies change based on whether MCP config is enabled
-	if stepName == "ValidateInstallation" {
-		validateDeps := []string{"CopyCoreFiles", "CopyCommandFiles", "MergeOrCreateCLAUDEmd", "CreateCommandSymlink"}
-		if i.context.Config.AddRecommendedMCP {
-			validateDeps = append(validateDeps, "MergeOrCreateMCPConfig")
-		}
-		return validateDeps
-	}
-
-	// CleanupTempFiles runs after everything else including validation
-	if stepName == "CleanupTempFiles" {
-		cleanupDeps := []string{"CopyCoreFiles", "CopyCommandFiles", "MergeOrCreateCLAUDEmd", "CreateCommandSymlink", "ValidateInstallation"}
-		if i.context.Config.AddRecommendedMCP {
-			cleanupDeps = append(cleanupDeps, "MergeOrCreateMCPConfig")
-		}
-		return cleanupDeps
-	}
-
-	if deps, ok := dependencies[stepName]; ok {
-		return deps
-	}
-	return []string{}
+	return nil
 }
 
 // GetInstallationSummary returns a summary of the installation

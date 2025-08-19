@@ -1,0 +1,85 @@
+<context>
+# Overview  
+The super-claude-lite installer currently uses a manual dependency resolution system that has proven problematic. A circular dependency issue was discovered where dependency cycles were only detected at runtime with poor error messages. This project will refactor the installer to use a proper Directed Acyclic Graph (DAG) library to prevent such issues and improve maintainability.
+
+# Core Features  
+- **Build-time cycle detection**: Prevent circular dependencies from being introduced by detecting them during graph construction rather than runtime
+- **Automatic topological sorting**: Replace manual dependency traversal with library-provided topological sort algorithms
+- **Centralized dependency declarations**: Move all step dependencies to a single location for better visibility and maintenance
+- **Enhanced error reporting**: Provide clear error messages that identify cycle paths and missing dependencies
+- **Backward compatibility**: Maintain existing InstallStep structure and public API
+
+# User Experience  
+- **Developer personas**: 
+  - Core maintainers who need to modify installation steps
+  - Contributors who may accidentally introduce dependency issues
+  - End users who experience installation failures due to dependency problems
+- **Key user flows**:
+  - Adding new installation steps with proper dependency declaration
+  - Debugging dependency issues with clear error messages
+  - Installing super-claude-lite with reliable step ordering
+- **UI/UX considerations**: Error messages must clearly communicate dependency problems and suggest fixes
+</context>
+<PRD>
+# Technical Architecture  
+- **System components**:
+  - New `DependencyGraph` struct wrapping `github.com/dominikbraun/graph`
+  - Updated installer.go to use topological sort instead of manual traversal
+  - Centralized dependency declarations in buildGraph() method
+- **Data models**:
+  - Maintain existing InstallStep structure
+  - Graph vertices as step names (strings)
+  - Graph edges representing dependencies
+- **APIs and integrations**:
+  - Integration with `github.com/dominikbraun/graph` library (Apache-2.0 license)
+  - Zero external dependencies beyond the graph library
+- **Infrastructure requirements**:
+  - Go module update to include graph library
+  - Maintain compatibility with existing build and test infrastructure
+
+# Development Roadmap  
+- **Phase 1 - Core Refactoring (MVP)**:
+  - Add github.com/dominikbraun/graph dependency to go.mod
+  - Create new dependency_graph.go file with DAG builder
+  - Migrate all existing static dependencies to centralized declaration
+  - Replace manual dependency traversal with topological sort
+  - Add comprehensive unit tests for graph construction and sorting
+  - Ensure all existing installation scenarios continue to work
+- **Phase 2 - Enhanced Features**:
+  - Add dependency graph visualization capabilities (optional)
+  - Implement support for parallel step execution where dependencies allow
+  - Enhanced progress reporting showing dependency chains
+  - Advanced cycle detection with detailed path reporting
+
+# Logical Dependency Chain
+- **Foundation first**: Library integration and basic graph construction must work before any dependency migration
+- **Quick validation**: Create simple test cases to verify graph functionality works as expected
+- **Incremental migration**: Move dependencies one at a time to avoid introducing bugs
+- **Atomic features**: Each phase produces a working installer - Phase 1 delivers full functionality, Phase 2 adds enhancements
+- **Build upon success**: Phase 2 features build on the solid foundation of Phase 1's working DAG implementation
+
+# Risks and Mitigations  
+- **Technical challenges**:
+  - Library API stability (v0.x version): Pin to specific version, consider vendoring
+  - Unknown edge cases in current manual system: Extensive testing and beta period
+  - Performance impact: Benchmark graph operations (expected <1ms for ~15 nodes)
+- **MVP scope management**:
+  - Focus Phase 1 on exact functional replacement of current system
+  - Defer optimization and new features to Phase 2
+  - Maintain backward compatibility as primary constraint
+- **Resource constraints**:
+  - Learning curve for new library: Provide clear documentation and examples
+  - Testing effort: Leverage existing test scenarios, add specific DAG tests
+  - Timeline: 4-week implementation with weekly milestones
+
+# Appendix  
+- **Research findings**:
+  - Evaluated multiple Go graph libraries
+  - Selected github.com/dominikbraun/graph for zero dependencies and built-in cycle detection
+  - Current system has ~15 installation steps with complex conditional dependencies
+- **Technical specifications**:
+  - Graph construction with Acyclic() option prevents cycles at build time
+  - Topological sort provides deterministic ordering
+  - Support for conditional dependencies based on InstallConfig
+  - Maintain existing dry-run and logging functionality
+</PRD>

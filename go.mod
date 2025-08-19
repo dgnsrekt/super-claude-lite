@@ -6,6 +6,7 @@ toolchain go1.24.5
 
 require (
 	github.com/charmbracelet/fang v0.3.1-0.20250818140613-d27cfc4cc5f4
+	github.com/dominikbraun/graph v0.23.0
 	github.com/spf13/cobra v1.9.1
 )
 
