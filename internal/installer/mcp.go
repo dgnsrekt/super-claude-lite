@@ -21,7 +21,7 @@ type MCPServer struct {
 // DiscoverMCPServers scans the SuperClaude/MCP directory and returns available MCP servers
 func DiscoverMCPServers(repoPath string) ([]MCPServer, error) {
 	mcpDir := filepath.Join(repoPath, "SuperClaude", "MCP")
-	
+
 	// Check if MCP directory exists
 	if _, err := os.Stat(mcpDir); os.IsNotExist(err) {
 		return nil, fmt.Errorf("MCP directory not found: %s", mcpDir)
@@ -44,11 +44,11 @@ func DiscoverMCPServers(repoPath string) ([]MCPServer, error) {
 		// Extract server name: MCP_Context7.md -> Context7
 		name := strings.TrimPrefix(entry.Name(), "MCP_")
 		name = strings.TrimSuffix(name, ".md")
-		
+
 		// Expected config file: Context7 -> context7.json
 		configFile := strings.ToLower(name) + ".json"
 		configPath := filepath.Join(mcpDir, "configs", configFile)
-		
+
 		// Check if config file exists
 		if _, err := os.Stat(configPath); os.IsNotExist(err) {
 			// Skip servers without config files
@@ -77,7 +77,7 @@ func DiscoverMCPServers(repoPath string) ([]MCPServer, error) {
 // LoadMCPConfig loads an MCP server configuration from its JSON file
 func LoadMCPConfig(repoPath, configFile string) (map[string]interface{}, error) {
 	configPath := filepath.Join(repoPath, "SuperClaude", "MCP", "configs", configFile)
-	
+
 	data, err := os.ReadFile(configPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read MCP config %s: %w", configFile, err)
