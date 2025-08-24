@@ -9,6 +9,10 @@ import (
 
 // TestMCPFlagIntegration validates that the --add-mcp flag works correctly in full installation scenarios
 func TestMCPFlagIntegration(t *testing.T) {
+	// Setup test MCP selector mock
+	restore := setupTestMCPSelector()
+	defer restore()
+
 	// Test MCP flag integration with baseline capture
 	t.Run("MCP_flag_baseline_integration", func(t *testing.T) {
 		tempDir := t.TempDir()
@@ -172,8 +176,9 @@ func TestMCPFlagDependencyValidation(t *testing.T) {
 			expectedSteps := []string{
 				"CheckPrerequisites", "ScanExistingFiles", "CreateBackups",
 				"CheckTargetDirectory", "CloneRepository", "CreateDirectoryStructure",
-				"CopyCoreFiles", "CopyCommandFiles", "MergeOrCreateCLAUDEmd",
-				"MergeOrCreateMCPConfig", "CreateCommandSymlink", "ValidateInstallation",
+				"CopyCoreFiles", "CopyCommandFiles", "CopyAgentFiles", "CopyModeFiles",
+				"CopyMCPFiles", "MergeOrCreateCLAUDEmd", "MergeOrCreateMCPConfig",
+				"CreateCommandSymlink", "CreateAgentSymlink", "ValidateInstallation",
 				"CleanupTempFiles",
 			}
 

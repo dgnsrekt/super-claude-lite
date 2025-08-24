@@ -217,8 +217,9 @@ func TestMCPDependencyGraphPerformance(t *testing.T) {
 			expectedSteps := []string{
 				"CheckPrerequisites", "ScanExistingFiles", "CreateBackups",
 				"CheckTargetDirectory", "CloneRepository", "CreateDirectoryStructure",
-				"CopyCoreFiles", "CopyCommandFiles", "MergeOrCreateCLAUDEmd",
-				"MergeOrCreateMCPConfig", "CreateCommandSymlink", "ValidateInstallation",
+				"CopyCoreFiles", "CopyCommandFiles", "CopyAgentFiles", "CopyModeFiles",
+				"CopyMCPFiles", "MergeOrCreateCLAUDEmd", "MergeOrCreateMCPConfig",
+				"CreateCommandSymlink", "CreateAgentSymlink", "ValidateInstallation",
 				"CleanupTempFiles",
 			}
 

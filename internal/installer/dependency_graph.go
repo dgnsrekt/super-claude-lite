@@ -398,7 +398,7 @@ func (dg *DependencyGraph) BuildInstallationGraph(config *InstallConfig) error {
 		{From: "CopyMCPFiles", To: "CloneRepository"},
 		{From: "CopyMCPFiles", To: "CreateDirectoryStructure"},
 		{From: "MergeOrCreateCLAUDEmd", To: "CreateDirectoryStructure"},
-		{From: "MergeOrCreateCLAUDEmd", To: "CopyMCPFiles"}, // CLAUDE.md needs to know selected MCP servers
+		{From: "MergeOrCreateCLAUDEmd", To: "CopyMCPFiles"},  // CLAUDE.md needs to know selected MCP servers
 		{From: "MergeOrCreateCLAUDEmd", To: "CopyCoreFiles"}, // Must run after core files are copied
 		{From: "MergeOrCreateMCPConfig", To: "CreateDirectoryStructure"},
 		{From: "MergeOrCreateMCPConfig", To: "CopyMCPFiles"}, // MCP config needs selected servers
