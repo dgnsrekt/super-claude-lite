@@ -10,16 +10,17 @@ import (
 
 // InstallContext holds the state of the installation process
 type InstallContext struct {
-	TargetDir     string
-	TempDir       string
-	RepoPath      string
-	BackupDir     string
-	BackupManager *BackupManager
-	Completed     []string
-	Config        *InstallConfig
-	ExistingFiles *ExistingFiles
-	SkipClaudeDir bool
-	DryRun        bool
+	TargetDir          string
+	TempDir            string
+	RepoPath           string
+	BackupDir          string
+	BackupManager      *BackupManager
+	Completed          []string
+	Config             *InstallConfig
+	ExistingFiles      *ExistingFiles
+	SelectedMCPServers []MCPServer
+	SkipClaudeDir      bool
+	DryRun             bool
 }
 
 // InstallConfig holds installation configuration options
