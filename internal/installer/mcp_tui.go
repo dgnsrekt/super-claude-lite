@@ -11,12 +11,12 @@ import (
 
 // Define key bindings
 var keys = struct {
-	up     key.Binding
-	down   key.Binding
-	space  key.Binding
-	enter  key.Binding
-	quit   key.Binding
-	help   key.Binding
+	up    key.Binding
+	down  key.Binding
+	space key.Binding
+	enter key.Binding
+	quit  key.Binding
+	help  key.Binding
 }{
 	up: key.NewBinding(
 		key.WithKeys("up", "k"),
@@ -67,20 +67,20 @@ var (
 
 // MCPSelectorModel represents the TUI state for MCP server selection
 type MCPSelectorModel struct {
-	servers  []MCPServer
-	cursor   int
-	selected map[int]bool
-	quitting bool
+	servers   []MCPServer
+	cursor    int
+	selected  map[int]bool
+	quitting  bool
 	confirmed bool
 }
 
 // NewMCPSelector creates a new MCP selector TUI model
 func NewMCPSelector(servers []MCPServer) MCPSelectorModel {
 	return MCPSelectorModel{
-		servers:  servers,
-		cursor:   0,
-		selected: make(map[int]bool),
-		quitting: false,
+		servers:   servers,
+		cursor:    0,
+		selected:  make(map[int]bool),
+		quitting:  false,
 		confirmed: false,
 	}
 }
@@ -188,7 +188,7 @@ func (m MCPSelectorModel) GetSelectedServers() []MCPServer {
 // ShowMCPSelector displays the TUI and returns the selected servers
 func ShowMCPSelector(servers []MCPServer) ([]MCPServer, error) {
 	model := NewMCPSelector(servers)
-	
+
 	program := tea.NewProgram(model)
 	finalModel, err := program.Run()
 	if err != nil {
@@ -197,7 +197,7 @@ func ShowMCPSelector(servers []MCPServer) ([]MCPServer, error) {
 
 	// Extract results from final model
 	final := finalModel.(MCPSelectorModel)
-	
+
 	if final.quitting {
 		return nil, fmt.Errorf("user cancelled MCP selection")
 	}

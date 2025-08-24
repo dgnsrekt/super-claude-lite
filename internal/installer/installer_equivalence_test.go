@@ -13,6 +13,25 @@ import (
 	"time"
 )
 
+// setupTestMCPSelector sets up a mock MCP selector for tests
+func setupTestMCPSelector() func() {
+	originalSelector := selectMCPServers
+
+	// Mock implementation that selects all available servers
+	selectMCPServers = func(servers []MCPServer) ([]MCPServer, error) {
+		// For tests, select all available servers
+		for i := range servers {
+			servers[i].Selected = true
+		}
+		return servers, nil
+	}
+
+	// Return cleanup function
+	return func() {
+		selectMCPServers = originalSelector
+	}
+}
+
 // EquivalenceTestHarness provides infrastructure for comparing DAG vs manual approaches
 type EquivalenceTestHarness struct {
 	TestName    string
@@ -289,9 +308,13 @@ func (m *EquivalenceManualInstaller) getManualExecutionOrder() []string {
 		"CreateDirectoryStructure",
 		"CopyCoreFiles",
 		"CopyCommandFiles",
+		"CopyAgentFiles",
+		"CopyModeFiles",
+		"CopyMCPFiles",
 		"MergeOrCreateCLAUDEmd",
 		"MergeOrCreateMCPConfig", // Always included - DAG controls the dependencies
 		"CreateCommandSymlink",
+		"CreateAgentSymlink",
 		"ValidateInstallation",
 		"CleanupTempFiles",
 	}
@@ -651,6 +674,10 @@ func TestMCPConfigurationEquivalence(t *testing.T) {
 		t.Skip("Skipping MCP configuration equivalence tests in short mode")
 	}
 
+	// Setup mock MCP selector to avoid TTY issues in tests
+	cleanup := setupTestMCPSelector()
+	defer cleanup()
+
 	mcpScenarios := []EquivalenceTestScenario{
 		{
 			Name:        "mcp_enabled_clean",
@@ -959,6 +986,9 @@ func TestCompletionTrackingEquivalence(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping completion tracking equivalence tests in short mode")
 	}
+	// Setup test MCP selector mock
+	restore := setupTestMCPSelector()
+	defer restore()
 
 	scenario := EquivalenceTestScenario{
 		Name:        "completion_tracking_test",
@@ -1159,6 +1189,9 @@ func TestInstallationSummaryEquivalence(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping installation summary equivalence tests in short mode")
 	}
+	// Setup test MCP selector mock
+	restore := setupTestMCPSelector()
+	defer restore()
 
 	summaryScenarios := []EquivalenceTestScenario{
 		{

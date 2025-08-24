@@ -965,6 +965,9 @@ func TestMissingStepsAndInvalidConfiguration(t *testing.T) {
 
 // TestConfigurationValidation tests various configuration validation scenarios
 func TestConfigurationValidation(t *testing.T) {
+	// Setup test MCP selector mock
+	restore := setupTestMCPSelector()
+	defer restore()
 	configTests := []struct {
 		name        string
 		description string
