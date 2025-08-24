@@ -29,10 +29,10 @@ go install github.com/dgnsrekt/super-claude-lite/cmd/super-claude-lite@latest
 # Check installation status
 super-claude-lite status
 
-# Install with recommended MCP servers
+# Interactive installation with MCP server selection
 super-claude-lite init --add-mcp
 
-# or Basic installation
+# Basic installation (framework only)
 super-claude-lite init
 
 ```
@@ -46,27 +46,53 @@ super-claude-lite init
 
 ## Features
 
-- Install SuperClaude Framework at any location (not forced to home directory)
-- Optional MCP server configuration with `--add-mcp` flag
+### Core Installation
+- Install SuperClaude Framework v4 at any location (not forced to home directory)
+- DAG-based dependency resolution for reliable installation order
 - Automatic backup and merge of existing files
+- Dry-run support for safe testing
+
+### SuperClaude Framework Integration
+- Installs SuperClaude Framework v4 with all components
+- See [SuperClaude Framework docs](https://github.com/SuperClaude-Org/SuperClaude_Framework) for framework details
+
+### MCP Server Selection
+- **Interactive TUI**: Keyboard-navigable interface for server selection
+- **Smart Integration**: Automatic `.mcp.json` configuration merging
+- **Framework Integration**: MCP imports added to SuperClaude's internal CLAUDE.md
+- **Selective Installation**: Choose only the MCP servers you need
+
+### Claude Code Integration  
 - Symlink integration with Claude Code slash commands
-- Dependency-aware installation steps
-- Dry-run support
+- Automatic CLAUDE.md import configuration
+- MCP server auto-configuration for immediate use
 
-## MCP Servers
+## MCP Server Selection
 
-When using `--add-mcp`, includes these recommended servers:
+The `--add-mcp` flag launches an interactive terminal interface where you can select from available MCP servers:
 
-- sequential-thinking
-- context7
-- serena
-- playwright
+### Available Servers
+Available MCP servers vary by SuperClaude Framework version. The interactive TUI will show all servers available in your installation.
+
+### Interactive Selection
+```bash
+super-claude-lite init --add-mcp
+```
+
+Use **↑/↓** or **j/k** to navigate, **Space** to toggle selection, **Enter** to confirm.
+
+Selected servers are automatically:
+- Added to your `.mcp.json` configuration
+- Integrated into SuperClaude's import system
+- Ready to use immediately in Claude Code
 
 ## Acknowledgments
 
-This tool installs the [SuperClaude Framework](https://github.com/SuperClaude-Org/SuperClaude_Framework) created by [SuperClaude-Org](https://github.com/SuperClaude-Org). SuperClaude Framework is an open-source AI configuration framework that provides specialized commands, cognitive personas, and development methodologies for enhancing Claude Code workflows.
+This tool installs the [SuperClaude Framework](https://github.com/SuperClaude-Org/SuperClaude_Framework) created by [SuperClaude-Org](https://github.com/SuperClaude-Org). 
 
-Special thanks to the SuperClaude-Org team for creating and maintaining this powerful framework that makes AI-assisted development more accessible and efficient.
+For detailed information about SuperClaude Framework features, commands, agents, and capabilities, please visit the [SuperClaude Framework documentation](https://github.com/SuperClaude-Org/SuperClaude_Framework).
+
+Special thanks to the SuperClaude-Org team for creating and maintaining this powerful framework.
 
 ## License
 

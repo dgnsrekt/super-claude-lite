@@ -30,9 +30,13 @@ func GetInstallSteps() map[string]*InstallStep {
 		"CreateDirectoryStructure": {Name: "CreateDirectoryStructure", Execute: createDirectoryStructure, Validate: nil},
 		"CopyCoreFiles":            {Name: "CopyCoreFiles", Execute: copyCoreFiles, Validate: validateCoreFiles},
 		"CopyCommandFiles":         {Name: "CopyCommandFiles", Execute: copyCommandFiles, Validate: validateCommandFiles},
+		"CopyAgentFiles":           {Name: "CopyAgentFiles", Execute: copyAgentFiles, Validate: validateAgentFiles},
+		"CopyModeFiles":            {Name: "CopyModeFiles", Execute: copyModeFiles, Validate: validateModeFiles},
+		"CopyMCPFiles":             {Name: "CopyMCPFiles", Execute: copyMCPFiles, Validate: nil},
 		"MergeOrCreateCLAUDEmd":    {Name: "MergeOrCreateCLAUDEmd", Execute: mergeOrCreateCLAUDEmd, Validate: nil},
 		"MergeOrCreateMCPConfig":   {Name: "MergeOrCreateMCPConfig", Execute: mergeOrCreateMCPConfig, Validate: nil},
 		"CreateCommandSymlink":     {Name: "CreateCommandSymlink", Execute: createCommandSymlink, Validate: nil},
+		"CreateAgentSymlink":       {Name: "CreateAgentSymlink", Execute: createAgentSymlink, Validate: nil},
 		"ValidateInstallation":     {Name: "ValidateInstallation", Execute: validateInstallation, Validate: nil},
 		"CleanupTempFiles":         {Name: "CleanupTempFiles", Execute: cleanupTempFiles, Validate: nil},
 	}
@@ -57,6 +61,11 @@ func scanExistingFiles(ctx *InstallContext) error {
 }
 
 func createBackups(ctx *InstallContext) error {
+	if ctx.DryRun {
+		fmt.Printf("[DRY RUN] Would create backups if needed\n")
+		return nil
+	}
+
 	if ctx.Config.NoBackup || ctx.BackupManager == nil {
 		return nil
 	}
@@ -112,8 +121,8 @@ func createDirectoryStructure(ctx *InstallContext) error {
 	// Create .claude directory only if it doesn't exist or is empty
 	claudeDir := filepath.Join(ctx.TargetDir, config.ClaudeDir)
 	if !ctx.SkipClaudeDir && !ctx.ExistingFiles.ClaudeDir {
-		// Also create commands directory for Claude Code integration
-		dirs = append(dirs, claudeDir, filepath.Join(claudeDir, "commands"))
+		// Also create commands and agents directories for Claude Code integration
+		dirs = append(dirs, claudeDir, filepath.Join(claudeDir, "commands"), filepath.Join(claudeDir, "agents"))
 	}
 
 	for _, dir := range dirs {
@@ -139,7 +148,32 @@ func copyCoreFiles(ctx *InstallContext) error {
 	corePath, _ := git.GetSourcePaths(ctx.RepoPath)
 	targetPath := filepath.Join(ctx.TargetDir, config.SuperClaudeDir)
 
-	return copyMarkdownFiles(corePath, targetPath)
+	if err := copyMarkdownFiles(corePath, targetPath); err != nil {
+		return err
+	}
+
+	// Create CLAUDE.md file with v4 import structure
+	claudePath := filepath.Join(targetPath, "CLAUDE.md")
+	if !fileExists(claudePath) {
+		claudeContent := `# The superclaude CLAUDE.md file uses an import system to load multiple context files:
+
+*MANDATORY*
+@FLAGS.md # Flag definitions and triggers
+@RULES.md # Core behavioral rules
+@PRINCIPLES.md # Guiding principles
+*CRITICAL*
+@Modes/MODE_Brainstorming.md # Collaborative discovery mode
+@Modes/MODE_Introspection.md # Transparent reasoning mode
+@Modes/MODE_Task_Management.md # Task orchestration mode
+@Modes/MODE_Orchestration.md # Tool coordination mode
+@Modes/MODE_Token_Efficiency.md # Compressed communication mode
+`
+		if err := os.WriteFile(claudePath, []byte(claudeContent), 0644); err != nil {
+			return fmt.Errorf("failed to create CLAUDE.md: %w", err)
+		}
+	}
+
+	return nil
 }
 
 func copyCommandFiles(ctx *InstallContext) error {
@@ -154,8 +188,93 @@ func copyCommandFiles(ctx *InstallContext) error {
 	return copyMarkdownFiles(commandsPath, targetPath)
 }
 
+func copyAgentFiles(ctx *InstallContext) error {
+	if ctx.DryRun {
+		fmt.Printf("[DRY RUN] Would copy agent files from %s\n", config.AgentsSourcePath)
+		return nil
+	}
+
+	agentsPath := filepath.Join(ctx.RepoPath, config.AgentsSourcePath)
+	targetPath := filepath.Join(ctx.TargetDir, config.SuperClaudeDir, "Agents")
+
+	return copyMarkdownFiles(agentsPath, targetPath)
+}
+
+func copyModeFiles(ctx *InstallContext) error {
+	if ctx.DryRun {
+		fmt.Printf("[DRY RUN] Would copy mode files from %s\n", config.ModesSourcePath)
+		return nil
+	}
+
+	modesPath := filepath.Join(ctx.RepoPath, config.ModesSourcePath)
+	targetPath := filepath.Join(ctx.TargetDir, config.SuperClaudeDir, "Modes")
+
+	return copyMarkdownFiles(modesPath, targetPath)
+}
+
+func copyMCPFiles(ctx *InstallContext) error {
+	if ctx.DryRun {
+		fmt.Printf("[DRY RUN] Would copy selected MCP files\n")
+		return nil
+	}
+
+	// Only copy MCP files if user requested MCP support
+	if !ctx.Config.AddRecommendedMCP {
+		return nil
+	}
+
+	// Discover available MCP servers
+	servers, err := DiscoverMCPServers(ctx.RepoPath)
+	if err != nil {
+		return fmt.Errorf("failed to discover MCP servers: %w", err)
+	}
+
+	if len(servers) == 0 {
+		fmt.Printf("No MCP servers found, skipping MCP installation\n")
+		return nil
+	}
+
+	// Show TUI for server selection
+	fmt.Printf("Select MCP servers to install:\n")
+	selectedServers, err := ShowMCPSelector(servers)
+	if err != nil {
+		return fmt.Errorf("failed to select MCP servers: %w", err)
+	}
+
+	if len(selectedServers) == 0 {
+		fmt.Printf("No MCP servers selected, skipping MCP installation\n")
+		return nil
+	}
+
+	// Store selected servers in context for later use
+	ctx.SelectedMCPServers = selectedServers
+
+	// Create MCP target directory
+	mcpTargetDir := filepath.Join(ctx.TargetDir, config.SuperClaudeDir, "MCP")
+	if err := os.MkdirAll(mcpTargetDir, 0750); err != nil {
+		return fmt.Errorf("failed to create MCP directory: %w", err)
+	}
+
+	// Copy selected MCP files
+	mcpSourceDir := filepath.Join(ctx.RepoPath, "SuperClaude", "MCP")
+	for _, server := range selectedServers {
+		srcFile := filepath.Join(mcpSourceDir, server.MDFile)
+		dstFile := filepath.Join(mcpTargetDir, server.MDFile)
+		
+		if err := copyFile(srcFile, dstFile); err != nil {
+			return fmt.Errorf("failed to copy MCP file %s: %w", server.MDFile, err)
+		}
+	}
+
+	fmt.Printf("Copied %d MCP server files\n", len(selectedServers))
+	return nil
+}
+
 func mergeOrCreateCLAUDEmd(ctx *InstallContext) error {
-	claudePath := filepath.Join(ctx.TargetDir, config.CLAUDEFile)
+	// Main project CLAUDE.md (imports from .superclaude)
+	mainClaudePath := filepath.Join(ctx.TargetDir, config.CLAUDEFile)
+	// SuperClaude internal CLAUDE.md (gets MCP imports added)
+	superClaudePath := filepath.Join(ctx.TargetDir, config.SuperClaudeDir, config.CLAUDEFile)
 
 	if ctx.DryRun {
 		if ctx.ExistingFiles.CLAUDEmd {
@@ -163,14 +282,86 @@ func mergeOrCreateCLAUDEmd(ctx *InstallContext) error {
 		} else {
 			fmt.Printf("[DRY RUN] Would create new CLAUDE.md\n")
 		}
+		
+		if len(ctx.SelectedMCPServers) > 0 {
+			fmt.Printf("[DRY RUN] Would add MCP imports to .superclaude/CLAUDE.md for %d selected servers\n", len(ctx.SelectedMCPServers))
+		}
 		return nil
 	}
 
+	// Handle main project CLAUDE.md
 	if ctx.ExistingFiles.CLAUDEmd {
-		return mergeCLAUDEmd(claudePath)
+		if err := mergeCLAUDEmd(mainClaudePath); err != nil { // No MCP imports in main file
+			return err
+		}
+	} else {
+		if err := createCLAUDEmd(mainClaudePath); err != nil { // No MCP imports in main file
+			return err
+		}
 	}
 
-	return createCLAUDEmd(claudePath)
+	// Handle .superclaude/CLAUDE.md (add MCP imports here)
+	return updateSuperClaudeMCPImports(superClaudePath, ctx.SelectedMCPServers)
+}
+
+func updateSuperClaudeMCPImports(superClaudePath string, selectedMCPServers []MCPServer) error {
+	// Read existing .superclaude/CLAUDE.md
+	content, err := os.ReadFile(superClaudePath)
+	if err != nil {
+		return fmt.Errorf("failed to read .superclaude/CLAUDE.md: %w", err)
+	}
+
+	contentStr := string(content)
+	
+	// Remove any existing MCP import section first
+	contentStr = removeMCPImportsSection(contentStr)
+
+	// Add MCP imports if any servers were selected
+	if len(selectedMCPServers) > 0 {
+		mcpSection := "\n*MCP_INTEGRATIONS*\n"
+		for _, server := range selectedMCPServers {
+			mcpSection += fmt.Sprintf("@MCP/%s\n", server.MDFile)
+		}
+		contentStr += mcpSection
+	}
+
+	// Write updated content back
+	if err := os.WriteFile(superClaudePath, []byte(contentStr), 0o600); err != nil {
+		return fmt.Errorf("failed to update .superclaude/CLAUDE.md: %w", err)
+	}
+
+	if len(selectedMCPServers) > 0 {
+		fmt.Printf("Added MCP imports to .superclaude/CLAUDE.md for %d selected servers\n", len(selectedMCPServers))
+	}
+
+	return nil
+}
+
+func removeMCPImportsSection(content string) string {
+	lines := strings.Split(content, "\n")
+	var result []string
+	inMCPSection := false
+
+	for _, line := range lines {
+		if strings.HasPrefix(line, "*MCP_INTEGRATIONS*") {
+			inMCPSection = true
+			continue
+		}
+		
+		// If we're in MCP section and hit a line that starts with @ and contains MCP/, skip it
+		if inMCPSection && strings.HasPrefix(line, "@") && strings.Contains(line, "MCP/") {
+			continue
+		}
+		
+		// If we're in MCP section and hit an empty line or another section, exit MCP section
+		if inMCPSection && (strings.TrimSpace(line) == "" || strings.HasPrefix(line, "*")) {
+			inMCPSection = false
+		}
+		
+		result = append(result, line)
+	}
+
+	return strings.Join(result, "\n")
 }
 
 func mergeOrCreateMCPConfig(ctx *InstallContext) error {
@@ -216,6 +407,30 @@ func createCommandSymlink(ctx *InstallContext) error {
 	relPath := "../../.superclaude/Commands"
 	if err := os.Symlink(relPath, targetPath); err != nil {
 		return fmt.Errorf("failed to create command symlink: %w", err)
+	}
+
+	return nil
+}
+
+func createAgentSymlink(ctx *InstallContext) error {
+	if ctx.DryRun {
+		fmt.Printf("[DRY RUN] Would create symlink from .superclaude/Agents to .claude/agents/sc\n")
+		return nil
+	}
+
+	targetPath := filepath.Join(ctx.TargetDir, config.ClaudeDir, "agents", "sc")
+
+	// Remove existing symlink if it exists
+	if _, err := os.Lstat(targetPath); err == nil {
+		if err := os.Remove(targetPath); err != nil {
+			return fmt.Errorf("failed to remove existing agent symlink: %w", err)
+		}
+	}
+
+	// Create symlink using relative path for portability
+	relPath := "../../.superclaude/Agents"
+	if err := os.Symlink(relPath, targetPath); err != nil {
+		return fmt.Errorf("failed to create agent symlink: %w", err)
 	}
 
 	return nil
@@ -300,7 +515,7 @@ func validateCoreFiles(ctx *InstallContext) error {
 	}
 
 	coreDir := filepath.Join(ctx.TargetDir, config.SuperClaudeDir)
-	expectedFiles := []string{"CLAUDE.md", "COMMANDS.md", "FLAGS.md", "PRINCIPLES.md", "RULES.md"}
+	expectedFiles := []string{"CLAUDE.md", "FLAGS.md", "PRINCIPLES.md", "RULES.md"}
 
 	for _, file := range expectedFiles {
 		filePath := filepath.Join(coreDir, file)
@@ -327,6 +542,70 @@ func validateCommandFiles(ctx *InstallContext) error {
 
 	if len(entries) == 0 {
 		return fmt.Errorf("no command files found in %s", commandsDir)
+	}
+
+	return nil
+}
+
+func validateAgentFiles(ctx *InstallContext) error {
+	if ctx.DryRun {
+		return nil
+	}
+
+	agentsDir := filepath.Join(ctx.TargetDir, config.SuperClaudeDir, "Agents")
+
+	// Check that agents directory exists
+	if _, err := os.Stat(agentsDir); err != nil {
+		return fmt.Errorf("agents directory missing: %s", agentsDir)
+	}
+
+	// Check that at least some agent files exist
+	entries, err := os.ReadDir(agentsDir)
+	if err != nil {
+		return fmt.Errorf("failed to read agents directory: %w", err)
+	}
+
+	mdCount := 0
+	for _, entry := range entries {
+		if strings.HasSuffix(entry.Name(), ".md") {
+			mdCount++
+		}
+	}
+
+	if mdCount == 0 {
+		return fmt.Errorf("no agent files found in %s", agentsDir)
+	}
+
+	return nil
+}
+
+func validateModeFiles(ctx *InstallContext) error {
+	if ctx.DryRun {
+		return nil
+	}
+
+	modesDir := filepath.Join(ctx.TargetDir, config.SuperClaudeDir, "Modes")
+
+	// Check that modes directory exists
+	if _, err := os.Stat(modesDir); err != nil {
+		return fmt.Errorf("modes directory missing: %s", modesDir)
+	}
+
+	// Check that at least some mode files exist
+	entries, err := os.ReadDir(modesDir)
+	if err != nil {
+		return fmt.Errorf("failed to read modes directory: %w", err)
+	}
+
+	mdCount := 0
+	for _, entry := range entries {
+		if strings.HasSuffix(entry.Name(), ".md") {
+			mdCount++
+		}
+	}
+
+	if mdCount == 0 {
+		return fmt.Errorf("no mode files found in %s", modesDir)
 	}
 
 	return nil

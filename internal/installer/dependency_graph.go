@@ -391,26 +391,43 @@ func (dg *DependencyGraph) BuildInstallationGraph(config *InstallConfig) error {
 		{From: "CopyCoreFiles", To: "CreateDirectoryStructure"},
 		{From: "CopyCommandFiles", To: "CloneRepository"},
 		{From: "CopyCommandFiles", To: "CreateDirectoryStructure"},
+		{From: "CopyAgentFiles", To: "CloneRepository"},
+		{From: "CopyAgentFiles", To: "CreateDirectoryStructure"},
+		{From: "CopyModeFiles", To: "CloneRepository"},
+		{From: "CopyModeFiles", To: "CreateDirectoryStructure"},
+		{From: "CopyMCPFiles", To: "CloneRepository"},
+		{From: "CopyMCPFiles", To: "CreateDirectoryStructure"},
 		{From: "MergeOrCreateCLAUDEmd", To: "CreateDirectoryStructure"},
+		{From: "MergeOrCreateCLAUDEmd", To: "CopyMCPFiles"}, // CLAUDE.md needs to know selected MCP servers
+		{From: "MergeOrCreateCLAUDEmd", To: "CopyCoreFiles"}, // Must run after core files are copied
 		{From: "MergeOrCreateMCPConfig", To: "CreateDirectoryStructure"},
+		{From: "MergeOrCreateMCPConfig", To: "CopyMCPFiles"}, // MCP config needs selected servers
 		{From: "CreateCommandSymlink", To: "CopyCommandFiles"},
 		{From: "CreateCommandSymlink", To: "CreateDirectoryStructure"},
+		{From: "CreateAgentSymlink", To: "CopyAgentFiles"},
+		{From: "CreateAgentSymlink", To: "CreateDirectoryStructure"},
 	}
 
 	// Add ValidateInstallation dependencies (always includes these)
 	validateDependencies := []Dependency{
 		{From: "ValidateInstallation", To: "CopyCoreFiles"},
 		{From: "ValidateInstallation", To: "CopyCommandFiles"},
+		{From: "ValidateInstallation", To: "CopyAgentFiles"},
+		{From: "ValidateInstallation", To: "CopyModeFiles"},
 		{From: "ValidateInstallation", To: "MergeOrCreateCLAUDEmd"},
 		{From: "ValidateInstallation", To: "CreateCommandSymlink"},
+		{From: "ValidateInstallation", To: "CreateAgentSymlink"},
 	}
 
 	// Add CleanupTempFiles dependencies (always includes these)
 	cleanupDependencies := []Dependency{
 		{From: "CleanupTempFiles", To: "CopyCoreFiles"},
 		{From: "CleanupTempFiles", To: "CopyCommandFiles"},
+		{From: "CleanupTempFiles", To: "CopyAgentFiles"},
+		{From: "CleanupTempFiles", To: "CopyModeFiles"},
 		{From: "CleanupTempFiles", To: "MergeOrCreateCLAUDEmd"},
 		{From: "CleanupTempFiles", To: "CreateCommandSymlink"},
+		{From: "CleanupTempFiles", To: "CreateAgentSymlink"},
 		{From: "CleanupTempFiles", To: "ValidateInstallation"},
 	}
 
@@ -423,7 +440,9 @@ func (dg *DependencyGraph) BuildInstallationGraph(config *InstallConfig) error {
 	// Add conditional MCP dependencies if enabled
 	if config != nil && config.AddRecommendedMCP {
 		mcpDependencies := []Dependency{
+			{From: "ValidateInstallation", To: "CopyMCPFiles"},
 			{From: "ValidateInstallation", To: "MergeOrCreateMCPConfig"},
+			{From: "CleanupTempFiles", To: "CopyMCPFiles"},
 			{From: "CleanupTempFiles", To: "MergeOrCreateMCPConfig"},
 		}
 		allDependencies = append(allDependencies, mcpDependencies...)
