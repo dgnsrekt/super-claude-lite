@@ -1,0 +1,99 @@
+<context>
+# Overview
+The super-claude-lite installer currently targets SuperClaude Framework v3.x using a fixed commit hash. SuperClaude Framework has now released v4.0.8 with significant architectural changes including a component-based architecture, namespace changes for commands, and new agent system. This project will update super-claude-lite to support the new v4 framework with Core, Commands, and Agents components.
+
+# Core Features
+- **Agent system support**: Install 14 specialized domain agents as new v4 component
+- **Maintained command namespace**: Continue using `/sc:` prefix via existing sc subdirectory
+- **Component-based installation**: Support v4's Core, Commands, and Agents components
+- **Directory structure adaptation**: Add support for new Agents directory with proper symlinks
+- **Backward compatibility**: Maintain existing installation behavior and validation
+
+# User Experience
+- **Developer personas**:
+  - New users installing SuperClaude v4 for the first time
+  - Existing users who will get v4 on fresh installations
+  - Power users wanting latest SuperClaude features with agents
+- **Key user flows**:
+  - Clean installation of v4 framework with Core, Commands, and Agents
+  - Automatic creation of proper symlinks for `/sc:` namespace
+  - Seamless integration with Claude Code
+- **UI/UX considerations**: 
+  - Maintain familiar installation experience
+  - Clear output showing new components being installed
+  - Preserve existing dry-run and validation capabilities
+</context>
+<PRD>
+# Technical Architecture
+- **System components**:
+  - Updated `internal/config/constants.go` with v4.0.8 commit and new AgentsSourcePath
+  - New installer steps: copyAgentFiles and createAgentSymlink
+  - New validation function: validateAgentFiles
+  - Updated dependency graph with agent-related steps
+  - Existing copyMarkdownFiles helper reused for agents
+- **Data models**:
+  - Existing InstallStep structure maintained
+  - New constant: AgentsSourcePath = "SuperClaude/Agents"
+  - Symlink structure: `.claude/agents/sc` -> `.superclaude/Agents`
+- **APIs and integrations**:
+  - Git repository at v4.0.8 tag
+  - Continued use of existing copyMarkdownFiles helper (skips __init__.py)
+  - Leverage existing DAG-based dependency resolution
+- **Infrastructure requirements**:
+  - Update git reference to v4.0.8 commit/tag
+  - No new external dependencies needed
+  - Existing Go module structure maintained
+
+# Development Roadmap
+- **Implementation Steps**:
+  - Update repository reference to v4.0.8 tag in constants.go
+  - Add AgentsSourcePath constant
+  - Implement copyAgentFiles function using copyMarkdownFiles
+  - Implement createAgentSymlink function following command pattern
+  - Add validateAgentFiles function to check installation
+  - Update GetInstallSteps to include new steps
+  - Update BuildInstallationGraph with agent dependencies
+  - Test complete installation flow with v4 components
+
+# Logical Dependency Chain
+- **Foundation first**: Update git reference to v4.0.8 before any other changes
+- **Constants before code**: Add AgentsSourcePath before implementing functions
+- **Copy before symlink**: Agent files must be copied before creating symlinks
+- **Clone before copy**: Repository must be cloned before copying any files
+- **Structure before files**: Directory structure created before file operations
+- **Validate after install**: Validation depends on all copy and symlink operations
+- **Cleanup last**: Cleanup depends on all other operations
+
+# Risks and Mitigations
+- **Technical challenges**:
+  - v4 repository structure changes: Verified structure matches expected layout
+  - Agent files organization: All .md files in Agents directory, __init__.py ignored
+  - Symlink permissions: Use existing proven symlink creation logic
+- **Scope management**:
+  - Limited to Core + Commands + Agents only
+  - No changes to MCP configuration
+  - No changes to existing validation logic beyond adding agents
+- **Resource constraints**:
+  - Reuse existing functions where possible (copyMarkdownFiles)
+  - Leverage existing test infrastructure
+  - Minimal code changes for maximum compatibility
+
+# Appendix
+- **Research findings**:
+  - v4.0.8 includes 14 specialized agents replacing persona system
+  - Commands already properly configured for /sc: namespace
+  - Agents follow same pattern as commands for consistency
+  - Python __init__.py files already filtered by copyMarkdownFiles
+  - Existing symlink to .claude/commands/sc confirmed working
+- **Technical specifications**:
+  - Git reference: v4.0.8 tag/commit
+  - Agent source: SuperClaude/Agents/
+  - Agent target: .superclaude/Agents/
+  - Agent symlink: .claude/agents/sc -> ../../.superclaude/Agents
+  - Expected agents: backend-architect.md, frontend-architect.md, etc.
+- **Dependency graph additions**:
+  - CopyAgentFiles depends on: CloneRepository, CreateDirectoryStructure
+  - CreateAgentSymlink depends on: CopyAgentFiles, CreateDirectoryStructure  
+  - ValidateInstallation depends on: CopyAgentFiles, CreateAgentSymlink
+  - CleanupTempFiles depends on: CopyAgentFiles, CreateAgentSymlink
+</PRD>
