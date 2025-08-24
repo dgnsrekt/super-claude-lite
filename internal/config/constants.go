@@ -3,7 +3,7 @@ package config
 const (
 	// Repository information
 	RepoURL     = "https://github.com/SuperClaude-Org/SuperClaude_Framework.git"
-	FixedCommit = "8f12b19a220aabf23680ee86b6d6ab21c46ba6f6"
+	FixedCommit = "13aa2ec"
 	Branch      = "master"
 
 	// Directory names
@@ -15,6 +15,8 @@ const (
 	// Framework paths within the repository
 	CoreSourcePath     = "SuperClaude/Core"
 	CommandsSourcePath = "SuperClaude/Commands"
+	AgentsSourcePath   = "SuperClaude/Agents"
+	ModesSourcePath    = "SuperClaude/Modes"
 
 	// Backup directory prefix
 	BackupDirPrefix = ".superclaude-backup"
