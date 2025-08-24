@@ -71,6 +71,22 @@ Type "super-claude-lite init --add-mcp"
 Sleep 500ms
 Enter
 Sleep 5s
+Space
+Sleep 500ms
+Down
+Sleep 500ms
+Down
+Sleep 500ms
+Down
+Sleep 500ms
+Space
+Sleep 500ms
+Down
+Sleep 500ms
+Space
+Sleep 500ms
+Enter
+Sleep 4s
 
 # Show the resulting structure
 Type "# View the installed file structure"
