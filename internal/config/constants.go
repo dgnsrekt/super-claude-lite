@@ -46,4 +46,12 @@ var RecommendedMCPServers = map[string]interface{}{
 		"command": "npx",
 		"args":    []string{"@playwright/mcp@latest"},
 	},
+	"magic": map[string]interface{}{
+		"command": "npx",
+		"args":    []string{"-y", "@21st-dev/magic-mcp@latest"},
+	},
+	"morphllm": map[string]interface{}{
+		"command": "npx",
+		"args":    []string{"-y", "@morphllm/mcp@latest"},
+	},
 }

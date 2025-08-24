@@ -234,8 +234,8 @@ func BenchmarkBaselineCompleteWorkflow(b *testing.B) {
 			}
 
 			// Validate we got expected number of steps
-			if len(order) < 10 {
-				b.Fatalf("Expected at least 10 steps, got %d", len(order))
+			if len(order) < 16 {
+				b.Fatalf("Expected at least 16 steps, got %d", len(order))
 			}
 
 			b.StopTimer()
@@ -259,12 +259,13 @@ func BenchmarkBaselineCompleteWorkflow(b *testing.B) {
 			manualOrder := []string{
 				"CheckPrerequisites", "ScanExistingFiles", "CreateBackups",
 				"CheckTargetDirectory", "CloneRepository", "CreateDirectoryStructure",
-				"CopyCoreFiles", "CopyCommandFiles", "MergeOrCreateCLAUDEmd",
-				"CreateCommandSymlink", "ValidateInstallation", "CleanupTempFiles",
+				"CopyCoreFiles", "CopyCommandFiles", "CopyAgentFiles", "CopyModeFiles",
+				"CopyMCPFiles", "MergeOrCreateCLAUDEmd", "MergeOrCreateMCPConfig",
+				"CreateCommandSymlink", "CreateAgentSymlink", "ValidateInstallation", "CleanupTempFiles",
 			}
 
-			if len(manualOrder) < 10 {
-				b.Fatalf("Expected at least 10 steps in manual order")
+			if len(manualOrder) < 16 {
+				b.Fatalf("Expected at least 16 steps in manual order")
 			}
 
 			b.StopTimer()
@@ -315,8 +316,8 @@ func TestBaselinePerformanceMeasurements(t *testing.T) {
 			t.Errorf("DAG operations took %v, expected <1ms", dagDuration)
 		}
 
-		if len(order) < 12 {
-			t.Errorf("Expected at least 12 steps, got %d", len(order))
+		if len(order) < 16 {
+			t.Errorf("Expected at least 16 steps, got %d", len(order))
 		}
 
 		t.Logf("✅ All performance targets met")

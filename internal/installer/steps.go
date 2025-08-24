@@ -12,6 +12,11 @@ import (
 	"github.com/dgnsrekt/super-claude-lite/internal/git"
 )
 
+// selectMCPServers is a function variable that can be overridden for testing
+var selectMCPServers = func(servers []MCPServer) ([]MCPServer, error) {
+	return ShowMCPSelector(servers)
+}
+
 // InstallStep represents a single step in the installation process
 type InstallStep struct {
 	Name     string
@@ -118,11 +123,15 @@ func createDirectoryStructure(ctx *InstallContext) error {
 		filepath.Join(ctx.TargetDir, config.SuperClaudeDir, "Commands"),
 	}
 
-	// Create .claude directory only if it doesn't exist or is empty
+	// Create .claude directory and subdirectories as needed
 	claudeDir := filepath.Join(ctx.TargetDir, config.ClaudeDir)
-	if !ctx.SkipClaudeDir && !ctx.ExistingFiles.ClaudeDir {
-		// Also create commands and agents directories for Claude Code integration
-		dirs = append(dirs, claudeDir, filepath.Join(claudeDir, "commands"), filepath.Join(claudeDir, "agents"))
+	if !ctx.SkipClaudeDir {
+		if !ctx.ExistingFiles.ClaudeDir {
+			// Create the .claude directory itself
+			dirs = append(dirs, claudeDir)
+		}
+		// Always ensure commands and agents subdirectories exist for Claude Code integration
+		dirs = append(dirs, filepath.Join(claudeDir, "commands"), filepath.Join(claudeDir, "agents"))
 	}
 
 	for _, dir := range dirs {
@@ -236,7 +245,7 @@ func copyMCPFiles(ctx *InstallContext) error {
 
 	// Show TUI for server selection
 	fmt.Printf("Select MCP servers to install:\n")
-	selectedServers, err := ShowMCPSelector(servers)
+	selectedServers, err := selectMCPServers(servers)
 	if err != nil {
 		return fmt.Errorf("failed to select MCP servers: %w", err)
 	}
@@ -260,7 +269,7 @@ func copyMCPFiles(ctx *InstallContext) error {
 	for _, server := range selectedServers {
 		srcFile := filepath.Join(mcpSourceDir, server.MDFile)
 		dstFile := filepath.Join(mcpTargetDir, server.MDFile)
-		
+
 		if err := copyFile(srcFile, dstFile); err != nil {
 			return fmt.Errorf("failed to copy MCP file %s: %w", server.MDFile, err)
 		}
@@ -282,7 +291,7 @@ func mergeOrCreateCLAUDEmd(ctx *InstallContext) error {
 		} else {
 			fmt.Printf("[DRY RUN] Would create new CLAUDE.md\n")
 		}
-		
+
 		if len(ctx.SelectedMCPServers) > 0 {
 			fmt.Printf("[DRY RUN] Would add MCP imports to .superclaude/CLAUDE.md for %d selected servers\n", len(ctx.SelectedMCPServers))
 		}
@@ -312,7 +321,7 @@ func updateSuperClaudeMCPImports(superClaudePath string, selectedMCPServers []MC
 	}
 
 	contentStr := string(content)
-	
+
 	// Remove any existing MCP import section first
 	contentStr = removeMCPImportsSection(contentStr)
 
@@ -347,17 +356,17 @@ func removeMCPImportsSection(content string) string {
 			inMCPSection = true
 			continue
 		}
-		
+
 		// If we're in MCP section and hit a line that starts with @ and contains MCP/, skip it
 		if inMCPSection && strings.HasPrefix(line, "@") && strings.Contains(line, "MCP/") {
 			continue
 		}
-		
+
 		// If we're in MCP section and hit an empty line or another section, exit MCP section
 		if inMCPSection && (strings.TrimSpace(line) == "" || strings.HasPrefix(line, "*")) {
 			inMCPSection = false
 		}
-		
+
 		result = append(result, line)
 	}
 
@@ -382,10 +391,10 @@ func mergeOrCreateMCPConfig(ctx *InstallContext) error {
 	}
 
 	if ctx.ExistingFiles.MCPConfig {
-		return mergeMCPConfig(mcpPath, ctx.Config.AddRecommendedMCP)
+		return mergeMCPConfig(mcpPath, ctx.Config.AddRecommendedMCP, ctx.SelectedMCPServers, ctx.RepoPath)
 	}
 
-	return createMCPConfigWithRecommended(mcpPath)
+	return createMCPConfigWithSelected(mcpPath, ctx.SelectedMCPServers, ctx.RepoPath)
 }
 
 func createCommandSymlink(ctx *InstallContext) error {
@@ -682,7 +691,7 @@ func createCLAUDEmd(claudePath string) error {
 	return os.WriteFile(claudePath, []byte(content), 0o600)
 }
 
-func mergeMCPConfig(mcpPath string, addRecommended bool) error {
+func mergeMCPConfig(mcpPath string, addRecommended bool, selectedServers []MCPServer, repoPath string) error {
 	data, err := os.ReadFile(mcpPath)
 	if err != nil {
 		return fmt.Errorf("failed to read existing .mcp.json: %w", err)
@@ -698,13 +707,21 @@ func mergeMCPConfig(mcpPath string, addRecommended bool) error {
 		existing["mcpServers"] = make(map[string]interface{})
 	}
 
-	// Add recommended servers if requested
-	if addRecommended {
+	// Add selected servers if requested
+	if addRecommended && len(selectedServers) > 0 {
 		servers := existing["mcpServers"].(map[string]interface{})
 
-		for name, serverConfig := range config.RecommendedMCPServers {
-			if _, exists := servers[name]; !exists {
-				servers[name] = serverConfig
+		for _, mcpServer := range selectedServers {
+			serverConfig, err := LoadMCPConfig(repoPath, mcpServer.ConfigFile)
+			if err != nil {
+				return fmt.Errorf("failed to load MCP config for %s: %w", mcpServer.Name, err)
+			}
+
+			// Merge the loaded config, but don't overwrite existing ones
+			for key, value := range serverConfig {
+				if _, exists := servers[key]; !exists {
+					servers[key] = value
+				}
 			}
 		}
 	}
@@ -718,9 +735,24 @@ func mergeMCPConfig(mcpPath string, addRecommended bool) error {
 	return os.WriteFile(mcpPath, output, 0o600)
 }
 
-func createMCPConfigWithRecommended(mcpPath string) error {
+func createMCPConfigWithSelected(mcpPath string, selectedServers []MCPServer, repoPath string) error {
+	mcpServers := make(map[string]interface{})
+
+	// Add only the selected servers by loading their config files
+	for _, mcpServer := range selectedServers {
+		serverConfig, err := LoadMCPConfig(repoPath, mcpServer.ConfigFile)
+		if err != nil {
+			return fmt.Errorf("failed to load MCP config for %s: %w", mcpServer.Name, err)
+		}
+
+		// Merge the loaded config into mcpServers
+		for key, value := range serverConfig {
+			mcpServers[key] = value
+		}
+	}
+
 	mcpConfig := map[string]interface{}{
-		"mcpServers": config.RecommendedMCPServers,
+		"mcpServers": mcpServers,
 	}
 
 	output, err := json.MarshalIndent(mcpConfig, "", "    ")

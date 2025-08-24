@@ -16,6 +16,14 @@
 
 A lightweight installer for the [SuperClaude Framework](https://github.com/SuperClaude-Org/SuperClaude_Framework) that allows you to install it inside the project dir vs home dir.
 
+## Why Use Super Claude Lite?
+
+Super Claude Lite is for developers who want SuperClaude Framework but prefer project-specific installations:
+
+- **Don't want SuperClaude installed in the home ~/.claude directory** - Keep your home directory clean and use different configurations per project
+- **Don't want SuperClaude context in every project** - Install only where needed, avoiding unwanted AI assistant context in unrelated work
+- **Project-by-project control** - Each project gets its own SuperClaude setup, MCP servers, and configuration
+
 ## Demo
 
 ![Demo](demo.gif)

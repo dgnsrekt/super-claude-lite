@@ -1549,9 +1549,13 @@ func TestDependencyResolutionComparison(t *testing.T) {
 			"CreateDirectoryStructure",
 			"CopyCoreFiles",
 			"CopyCommandFiles",
+			"CopyAgentFiles",
+			"CopyModeFiles",
+			"CopyMCPFiles",
 			"MergeOrCreateCLAUDEmd",
 			"MergeOrCreateMCPConfig",
 			"CreateCommandSymlink",
+			"CreateAgentSymlink",
 			"ValidateInstallation",
 			"CleanupTempFiles",
 		}
@@ -1660,9 +1664,13 @@ func TestDependencyResolutionComparison(t *testing.T) {
 			"CreateDirectoryStructure",
 			"CopyCoreFiles",
 			"CopyCommandFiles",
+			"CopyAgentFiles",
+			"CopyModeFiles",
+			"CopyMCPFiles",
 			"MergeOrCreateCLAUDEmd",
 			"MergeOrCreateMCPConfig", // Still exists as a step, but no dependencies on it
 			"CreateCommandSymlink",
+			"CreateAgentSymlink",
 			"ValidateInstallation",
 			"CleanupTempFiles",
 		}
@@ -1963,8 +1971,11 @@ func TestMCPConditionalLogic(t *testing.T) {
 		expectedValidateDeps := []string{
 			"CopyCoreFiles",
 			"CopyCommandFiles",
+			"CopyAgentFiles",
+			"CopyModeFiles",
 			"MergeOrCreateCLAUDEmd",
 			"CreateCommandSymlink",
+			"CreateAgentSymlink",
 		}
 
 		validateDepsMap := make(map[string]bool)
@@ -1981,8 +1992,11 @@ func TestMCPConditionalLogic(t *testing.T) {
 		expectedCleanupDeps := []string{
 			"CopyCoreFiles",
 			"CopyCommandFiles",
+			"CopyAgentFiles",
+			"CopyModeFiles",
 			"MergeOrCreateCLAUDEmd",
 			"CreateCommandSymlink",
+			"CreateAgentSymlink",
 			"ValidateInstallation",
 		}
 
@@ -2089,16 +2103,16 @@ func TestMCPConditionalLogic(t *testing.T) {
 			t.Fatalf("Failed to get no-MCP CleanupTempFiles deps: %v", err)
 		}
 
-		// MCP enabled should have exactly one more dependency for each conditional step
-		if len(mcpValidateDeps) != len(noMcpValidateDeps)+1 {
-			t.Errorf("MCP enabled ValidateInstallation should have exactly 1 more dependency. MCP: %d, No-MCP: %d",
+		// MCP enabled should have exactly 2 more dependencies for each conditional step (MergeOrCreateMCPConfig and CopyMCPFiles)
+		if len(mcpValidateDeps) != len(noMcpValidateDeps)+2 {
+			t.Errorf("MCP enabled ValidateInstallation should have exactly 2 more dependencies. MCP: %d, No-MCP: %d",
 				len(mcpValidateDeps), len(noMcpValidateDeps))
 			t.Errorf("MCP deps: %v", mcpValidateDeps)
 			t.Errorf("No-MCP deps: %v", noMcpValidateDeps)
 		}
 
-		if len(mcpCleanupDeps) != len(noMcpCleanupDeps)+1 {
-			t.Errorf("MCP enabled CleanupTempFiles should have exactly 1 more dependency. MCP: %d, No-MCP: %d",
+		if len(mcpCleanupDeps) != len(noMcpCleanupDeps)+2 {
+			t.Errorf("MCP enabled CleanupTempFiles should have exactly 2 more dependencies. MCP: %d, No-MCP: %d",
 				len(mcpCleanupDeps), len(noMcpCleanupDeps))
 			t.Errorf("MCP deps: %v", mcpCleanupDeps)
 			t.Errorf("No-MCP deps: %v", noMcpCleanupDeps)
@@ -2207,9 +2221,13 @@ func TestRealInstallerIntegration(t *testing.T) {
 			"CreateDirectoryStructure",
 			"CopyCoreFiles",
 			"CopyCommandFiles",
+			"CopyAgentFiles",
+			"CopyModeFiles",
+			"CopyMCPFiles",
 			"MergeOrCreateCLAUDEmd",
 			"MergeOrCreateMCPConfig", // Should be present with MCP enabled
 			"CreateCommandSymlink",
+			"CreateAgentSymlink",
 			"ValidateInstallation",
 			"CleanupTempFiles",
 		}
@@ -2501,7 +2519,7 @@ func TestRealInstallerIntegration(t *testing.T) {
 // to the original getDependencies() method for all known installation steps and configurations.
 func TestRegressionDependencyMapping(t *testing.T) {
 	t.Run("StaticDependencyPreservation", func(t *testing.T) {
-		// Test each static dependency mapping against original system
+		// Test each static dependency mapping against current system
 		staticMappings := map[string][]string{
 			"ScanExistingFiles":        {"CheckPrerequisites"},
 			"CreateBackups":            {"ScanExistingFiles"},
@@ -2510,9 +2528,13 @@ func TestRegressionDependencyMapping(t *testing.T) {
 			"CreateDirectoryStructure": {"CheckTargetDirectory"},
 			"CopyCoreFiles":            {"CloneRepository", "CreateDirectoryStructure"},
 			"CopyCommandFiles":         {"CloneRepository", "CreateDirectoryStructure"},
-			"MergeOrCreateCLAUDEmd":    {"CreateDirectoryStructure"},
-			"MergeOrCreateMCPConfig":   {"CreateDirectoryStructure"},
+			"CopyAgentFiles":           {"CloneRepository", "CreateDirectoryStructure"},
+			"CopyModeFiles":            {"CloneRepository", "CreateDirectoryStructure"},
+			"CopyMCPFiles":             {"CloneRepository", "CreateDirectoryStructure"},
+			"MergeOrCreateCLAUDEmd":    {"CopyCoreFiles", "CopyMCPFiles", "CreateDirectoryStructure"},
+			"MergeOrCreateMCPConfig":   {"CopyMCPFiles", "CreateDirectoryStructure"},
 			"CreateCommandSymlink":     {"CopyCommandFiles", "CreateDirectoryStructure"},
+			"CreateAgentSymlink":       {"CopyAgentFiles", "CreateDirectoryStructure"},
 		}
 
 		// Test with non-MCP configuration
@@ -2553,28 +2575,28 @@ func TestRegressionDependencyMapping(t *testing.T) {
 				name:          "ValidateInstallation_WithoutMCP",
 				mcpEnabled:    false,
 				step:          "ValidateInstallation",
-				expectedBasic: []string{"CopyCoreFiles", "CopyCommandFiles", "MergeOrCreateCLAUDEmd", "CreateCommandSymlink"},
+				expectedBasic: []string{"CopyAgentFiles", "CopyCoreFiles", "CopyCommandFiles", "CopyModeFiles", "MergeOrCreateCLAUDEmd", "CreateCommandSymlink", "CreateAgentSymlink"},
 				expectedMCP:   nil,
 			},
 			{
 				name:          "ValidateInstallation_WithMCP",
 				mcpEnabled:    true,
 				step:          "ValidateInstallation",
-				expectedBasic: []string{"CopyCoreFiles", "CopyCommandFiles", "MergeOrCreateCLAUDEmd", "CreateCommandSymlink"},
+				expectedBasic: []string{"CopyAgentFiles", "CopyCoreFiles", "CopyCommandFiles", "CopyMCPFiles", "CopyModeFiles", "MergeOrCreateCLAUDEmd", "CreateCommandSymlink", "CreateAgentSymlink"},
 				expectedMCP:   []string{"MergeOrCreateMCPConfig"},
 			},
 			{
 				name:          "CleanupTempFiles_WithoutMCP",
 				mcpEnabled:    false,
 				step:          "CleanupTempFiles",
-				expectedBasic: []string{"CopyCoreFiles", "CopyCommandFiles", "MergeOrCreateCLAUDEmd", "CreateCommandSymlink", "ValidateInstallation"},
+				expectedBasic: []string{"CopyAgentFiles", "CopyCoreFiles", "CopyCommandFiles", "CopyModeFiles", "MergeOrCreateCLAUDEmd", "CreateCommandSymlink", "CreateAgentSymlink", "ValidateInstallation"},
 				expectedMCP:   nil,
 			},
 			{
 				name:          "CleanupTempFiles_WithMCP",
 				mcpEnabled:    true,
 				step:          "CleanupTempFiles",
-				expectedBasic: []string{"CopyCoreFiles", "CopyCommandFiles", "MergeOrCreateCLAUDEmd", "CreateCommandSymlink", "ValidateInstallation"},
+				expectedBasic: []string{"CopyAgentFiles", "CopyCoreFiles", "CopyCommandFiles", "CopyMCPFiles", "CopyModeFiles", "MergeOrCreateCLAUDEmd", "CreateCommandSymlink", "CreateAgentSymlink", "ValidateInstallation"},
 				expectedMCP:   []string{"MergeOrCreateMCPConfig"},
 			},
 		}
@@ -2720,9 +2742,9 @@ func TestMigrationValidation(t *testing.T) {
 		allSteps := []string{
 			"CheckPrerequisites", "ScanExistingFiles", "CreateBackups",
 			"CheckTargetDirectory", "CloneRepository", "CreateDirectoryStructure",
-			"CopyCoreFiles", "CopyCommandFiles", "MergeOrCreateCLAUDEmd",
-			"MergeOrCreateMCPConfig", "CreateCommandSymlink",
-			"ValidateInstallation", "CleanupTempFiles",
+			"CopyCoreFiles", "CopyCommandFiles", "CopyAgentFiles", "CopyModeFiles",
+			"CopyMCPFiles", "MergeOrCreateCLAUDEmd", "MergeOrCreateMCPConfig",
+			"CreateCommandSymlink", "CreateAgentSymlink", "ValidateInstallation", "CleanupTempFiles",
 		}
 
 		for i, config := range testConfigs {
@@ -2880,8 +2902,8 @@ func TestMigrationValidation(t *testing.T) {
 	t.Run("BackwardCompatibilityGuarantee", func(t *testing.T) {
 		// Final validation that migration preserves exact behavior
 
-		// Create a simulation of the original getDependencies method results
-		originalResults := map[string]map[bool][]string{
+		// Create a simulation of the current getDependencies method results
+		currentResults := map[string]map[bool][]string{
 			"ScanExistingFiles":        {false: {"CheckPrerequisites"}, true: {"CheckPrerequisites"}},
 			"CreateBackups":            {false: {"ScanExistingFiles"}, true: {"ScanExistingFiles"}},
 			"CheckTargetDirectory":     {false: {"CreateBackups"}, true: {"CreateBackups"}},
@@ -2889,11 +2911,15 @@ func TestMigrationValidation(t *testing.T) {
 			"CreateDirectoryStructure": {false: {"CheckTargetDirectory"}, true: {"CheckTargetDirectory"}},
 			"CopyCoreFiles":            {false: {"CloneRepository", "CreateDirectoryStructure"}, true: {"CloneRepository", "CreateDirectoryStructure"}},
 			"CopyCommandFiles":         {false: {"CloneRepository", "CreateDirectoryStructure"}, true: {"CloneRepository", "CreateDirectoryStructure"}},
-			"MergeOrCreateCLAUDEmd":    {false: {"CreateDirectoryStructure"}, true: {"CreateDirectoryStructure"}},
-			"MergeOrCreateMCPConfig":   {false: {"CreateDirectoryStructure"}, true: {"CreateDirectoryStructure"}},
+			"CopyAgentFiles":           {false: {"CloneRepository", "CreateDirectoryStructure"}, true: {"CloneRepository", "CreateDirectoryStructure"}},
+			"CopyModeFiles":            {false: {"CloneRepository", "CreateDirectoryStructure"}, true: {"CloneRepository", "CreateDirectoryStructure"}},
+			"CopyMCPFiles":             {false: {"CloneRepository", "CreateDirectoryStructure"}, true: {"CloneRepository", "CreateDirectoryStructure"}},
+			"MergeOrCreateCLAUDEmd":    {false: {"CopyCoreFiles", "CopyMCPFiles", "CreateDirectoryStructure"}, true: {"CopyCoreFiles", "CopyMCPFiles", "CreateDirectoryStructure"}},
+			"MergeOrCreateMCPConfig":   {false: {"CopyMCPFiles", "CreateDirectoryStructure"}, true: {"CopyMCPFiles", "CreateDirectoryStructure"}},
 			"CreateCommandSymlink":     {false: {"CopyCommandFiles", "CreateDirectoryStructure"}, true: {"CopyCommandFiles", "CreateDirectoryStructure"}},
-			"ValidateInstallation":     {false: {"CopyCoreFiles", "CopyCommandFiles", "MergeOrCreateCLAUDEmd", "CreateCommandSymlink"}, true: {"CopyCoreFiles", "CopyCommandFiles", "MergeOrCreateCLAUDEmd", "CreateCommandSymlink", "MergeOrCreateMCPConfig"}},
-			"CleanupTempFiles":         {false: {"CopyCoreFiles", "CopyCommandFiles", "MergeOrCreateCLAUDEmd", "CreateCommandSymlink", "ValidateInstallation"}, true: {"CopyCoreFiles", "CopyCommandFiles", "MergeOrCreateCLAUDEmd", "CreateCommandSymlink", "ValidateInstallation", "MergeOrCreateMCPConfig"}},
+			"CreateAgentSymlink":       {false: {"CopyAgentFiles", "CreateDirectoryStructure"}, true: {"CopyAgentFiles", "CreateDirectoryStructure"}},
+			"ValidateInstallation":     {false: {"CopyAgentFiles", "CopyCoreFiles", "CopyCommandFiles", "CopyModeFiles", "MergeOrCreateCLAUDEmd", "CreateCommandSymlink", "CreateAgentSymlink"}, true: {"CopyAgentFiles", "CopyCoreFiles", "CopyCommandFiles", "CopyMCPFiles", "CopyModeFiles", "MergeOrCreateCLAUDEmd", "CreateCommandSymlink", "CreateAgentSymlink", "MergeOrCreateMCPConfig"}},
+			"CleanupTempFiles":         {false: {"CopyAgentFiles", "CopyCoreFiles", "CopyCommandFiles", "CopyModeFiles", "MergeOrCreateCLAUDEmd", "CreateCommandSymlink", "CreateAgentSymlink", "ValidateInstallation"}, true: {"CopyAgentFiles", "CopyCoreFiles", "CopyCommandFiles", "CopyMCPFiles", "CopyModeFiles", "MergeOrCreateCLAUDEmd", "CreateCommandSymlink", "CreateAgentSymlink", "ValidateInstallation", "MergeOrCreateMCPConfig"}},
 		}
 
 		for _, mcpEnabled := range []bool{false, true} {
@@ -2909,7 +2935,7 @@ func TestMigrationValidation(t *testing.T) {
 					t.Fatalf("BuildInstallationGraph failed: %v", err)
 				}
 
-				for stepName, expectedByMCP := range originalResults {
+				for stepName, expectedByMCP := range currentResults {
 					expected := expectedByMCP[mcpEnabled]
 					actual, err := dg.GetDependencies(stepName)
 					if err != nil {
@@ -2941,25 +2967,29 @@ func getOriginalDependencies(stepName string, mcpEnabled bool) []string {
 		"CreateDirectoryStructure": {"CheckTargetDirectory"},
 		"CopyCoreFiles":            {"CloneRepository", "CreateDirectoryStructure"},
 		"CopyCommandFiles":         {"CloneRepository", "CreateDirectoryStructure"},
-		"MergeOrCreateCLAUDEmd":    {"CreateDirectoryStructure"},
-		"MergeOrCreateMCPConfig":   {"CreateDirectoryStructure"},
+		"CopyAgentFiles":           {"CloneRepository", "CreateDirectoryStructure"},
+		"CopyModeFiles":            {"CloneRepository", "CreateDirectoryStructure"},
+		"CopyMCPFiles":             {"CloneRepository", "CreateDirectoryStructure"},
+		"MergeOrCreateCLAUDEmd":    {"CopyCoreFiles", "CreateDirectoryStructure", "CopyMCPFiles"},
+		"MergeOrCreateMCPConfig":   {"CreateDirectoryStructure", "CopyMCPFiles"},
 		"CreateCommandSymlink":     {"CopyCommandFiles", "CreateDirectoryStructure"},
+		"CreateAgentSymlink":       {"CopyAgentFiles", "CreateDirectoryStructure"},
 	}
 
 	// ValidateInstallation dependencies change based on whether MCP config is enabled
 	if stepName == "ValidateInstallation" {
-		validateDeps := []string{"CopyCoreFiles", "CopyCommandFiles", "MergeOrCreateCLAUDEmd", "CreateCommandSymlink"}
+		validateDeps := []string{"CopyCoreFiles", "CopyCommandFiles", "CopyAgentFiles", "CopyModeFiles", "MergeOrCreateCLAUDEmd", "CreateCommandSymlink", "CreateAgentSymlink"}
 		if mcpEnabled {
-			validateDeps = append(validateDeps, "MergeOrCreateMCPConfig")
+			validateDeps = append(validateDeps, "MergeOrCreateMCPConfig", "CopyMCPFiles")
 		}
 		return validateDeps
 	}
 
 	// CleanupTempFiles runs after everything else including validation
 	if stepName == "CleanupTempFiles" {
-		cleanupDeps := []string{"CopyCoreFiles", "CopyCommandFiles", "MergeOrCreateCLAUDEmd", "CreateCommandSymlink", "ValidateInstallation"}
+		cleanupDeps := []string{"CopyCoreFiles", "CopyCommandFiles", "CopyAgentFiles", "CopyModeFiles", "MergeOrCreateCLAUDEmd", "CreateCommandSymlink", "CreateAgentSymlink", "ValidateInstallation"}
 		if mcpEnabled {
-			cleanupDeps = append(cleanupDeps, "MergeOrCreateMCPConfig")
+			cleanupDeps = append(cleanupDeps, "MergeOrCreateMCPConfig", "CopyMCPFiles")
 		}
 		return cleanupDeps
 	}
